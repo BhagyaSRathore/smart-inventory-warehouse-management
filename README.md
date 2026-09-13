@@ -382,10 +382,10 @@ We welcome contributions! Please follow:
 
 ## 👨‍💻 Contributors
 
-- [Your Name] - Project Lead
-- [Team Member 2] - Frontend Developer
-- [Team Member 3] - Backend Developer
-- [Team Member 4] - ML Engineer
+- Bhagya Singh Rathore - Project Lead
+- Bhagya Singh Rathore - Frontend Developer
+- Anushka Pandey & Bhagya Singh Rathore - Backend Developer
+- Bhawi Sharma & Bhawna Soni- ML Engineer
 
 ## 📄 License
 
