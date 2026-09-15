@@ -1,4 +1,6 @@
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { getProductsFromBackend } from './services/api';
 import MainLayout from './layouts/MainLayout';
 import Dashboard from './pages/Dashboard';
 import Products from './pages/Products';
@@ -14,6 +16,15 @@ import Predictions from './pages/Predictions';
 import Restock from './pages/Restock';
 
 function App() {
+  useEffect(() => {
+  getProductsFromBackend()
+    .then((data) => {
+      console.log("Backend Products:", data);
+    })
+    .catch((error) => {
+      console.error("Backend Error:", error);
+    });
+}, []);
   return (
     <Router>
       <Routes>

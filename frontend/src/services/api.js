@@ -1,3 +1,60 @@
+// Backend API connection
+const API_BASE_URL = "http://localhost:5000/api";
+
+async function apiRequest(endpoint, options = {}) {
+  const token = localStorage.getItem("token");
+
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    ...options,
+    headers: {
+      "Content-Type": "application/json",
+      ...(token && {
+        Authorization: `Bearer ${token}`,
+      }),
+      ...options.headers,
+    },
+  });
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(data.message || "API request failed");
+  }
+
+  return data;
+}
+
+export const getProductsFromBackend = () =>
+  apiRequest("/products");
+
+export const getCategoriesFromBackend = () =>
+  apiRequest("/categories");
+
+export const getSuppliersFromBackend = () =>
+  apiRequest("/suppliers");
+
+export const getWarehousesFromBackend = () =>
+  apiRequest("/warehouses");
+
+export const getRacksFromBackend = () =>
+  apiRequest("/racks");
+
+export const getInventoryFromBackend = () =>
+  apiRequest("/inventory");
+
+export const getStockMovementsFromBackend = () =>
+  apiRequest("/stock-movements");
+
+export const getOrdersFromBackend = () =>
+  apiRequest("/orders");
+
+export const getDashboardFromBackend = () =>
+  apiRequest("/dashboard");
+
+// Existing demo API code below
+// API Service Layer
+// Currently returns demo data
+
 // API Service Layer
 // Currently returns demo data
 // Will be replaced with actual API calls when backend is ready
