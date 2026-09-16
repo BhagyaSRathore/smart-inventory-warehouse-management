@@ -1,4 +1,4 @@
-import { db } from "../../prisma/db.ts";
+import { db } from "../db.ts";
 
 export const getDashboard = async (req, res) => {
   try {
