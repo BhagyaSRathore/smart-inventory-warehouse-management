@@ -4,11 +4,11 @@
   "description": "Node.js + Express REST API for the Smart Inventory & Warehouse Management System.",
   "main": "index.js",
   "scripts": {
-    "dev": "nodemon server.js",
-    "start": "node server.js",
-    "postinstall": "prisma skills sync || exit 0",
-    "contract:emit": "prisma contract emit"
-  },
+  "dev": "nodemon --exec tsx server.js",
+  "start": "tsx server.js",
+  "postinstall": "prisma skills sync || exit 0",
+  "contract:emit": "prisma contract emit"
+},
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -26,6 +26,7 @@
     "@prisma/cli-engine": "^0.4.0",
     "@types/node": "^26.5.1",
     "nodemon": "^3.1.14",
-    "prisma": "^8.0.0-rc.15"
+    "prisma": "^8.0.0-rc.15",
+    "tsx": "^4.23.13"
   }
 }

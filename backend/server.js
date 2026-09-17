@@ -11,7 +11,7 @@ import inventoryRoutes from "./src/routes/inventory.routes.js";
 import stockRoutes from "./src/routes/stock.routes.js";
 import orderRoutes from "./src/routes/order.routes.js";
 import dashboardRoutes from "./src/routes/dashboard.routes.js";
-import { db } from "./prisma/db.ts";
+import { db } from "./src/db.ts";
 
 const app = express();
 app.use(cors());
