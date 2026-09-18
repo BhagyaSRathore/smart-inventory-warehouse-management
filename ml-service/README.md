@@ -1,174 +1,115 @@
 # ML Service
 
-## Overview
+Small FastAPI service for demand forecasting, stock risk assessment, and restock recommendations. The first version is intentionally deterministic: it uses a rolling average of historical `OUT` stock movements and does not connect to PostgreSQL.
 
-Python-based machine learning service for demand prediction and intelligent inventory recommendations.
+## Structure
 
-## Technology Stack (Planned)
-
-- **Python 3.9+** - Programming language
-- **FastAPI** - API framework
-- **scikit-learn** - ML library
-- **pandas** - Data processing
-- **numpy** - Numerical computing
-- **Prophet** - Time series forecasting
-- **joblib** - Model serialization
-
-## ML Models (Planned)
-
-### 1. Demand Prediction
-- **Algorithm**: ARIMA, Prophet, or LSTM
-- **Input**: Historical sales data, seasonality, trends
-- **Output**: Predicted demand for next 7, 14, 30 days
-- **Features**:
-  - Past sales volume
-  - Seasonality patterns
-  - Day of week
-  - Month
-  - Promotions/events
-  - Product category trends
-
-### 2. Stock Risk Classification
-- **Algorithm**: Random Forest or Gradient Boosting
-- **Input**: Current stock, demand rate, lead time
-- **Output**: Risk level (LOW, MEDIUM, HIGH, CRITICAL)
-- **Features**:
-  - Current stock level
-  - Predicted demand
-  - Reorder level
-  - Safety stock
-  - Lead time
-  - Supplier reliability
-
-### 3. Restock Quantity Recommendation
-- **Algorithm**: Optimization model
-- **Input**: Predicted demand, current stock, constraints
-- **Output**: Optimal restock quantity
-- **Considerations**:
-  - Economic Order Quantity (EOQ)
-  - Storage capacity
-  - Budget constraints
-  - Supplier minimum order quantity
-
-## API Endpoints (Planned)
-
-### Predictions
-- `POST /api/v1/predict/demand` - Predict product demand
-  ```json
-  {
-    "product_id": "M101",
-    "days": 30,
-    "historical_data": [...]
-  }
-  ```
-
-- `POST /api/v1/predict/batch` - Batch prediction for multiple products
-
-### Risk Assessment
-- `POST /api/v1/risk/assess` - Assess stock risk
-  ```json
-  {
-    "product_id": "M101",
-    "current_stock": 60,
-    "reorder_level": 100,
-    "lead_time_days": 5
-  }
-  ```
-
-### Recommendations
-- `POST /api/v1/recommend/restock` - Get restock recommendation
-  ```json
-  {
-    "product_id": "M101",
-    "current_stock": 60,
-    "predicted_demand": 80,
-    "lead_time": 5
-  }
-  ```
-
-### Model Management
-- `GET /api/v1/models/status` - Get model status
-- `POST /api/v1/models/train` - Trigger model training
-- `GET /api/v1/models/metrics` - Get model performance metrics
-
-## Training Pipeline (Planned)
-
-1. **Data Collection**
-   - Fetch historical sales from database
-   - Clean and preprocess data
-   - Feature engineering
-
-2. **Model Training**
-   - Split train/test data
-   - Train multiple models
-   - Cross-validation
-   - Hyperparameter tuning
-
-3. **Model Evaluation**
-   - Calculate metrics (MAE, RMSE, MAPE)
-   - Compare models
-   - Select best model
-
-4. **Model Deployment**
-   - Save trained model
-   - Update API to use new model
-   - Version control
-
-5. **Monitoring**
-   - Track prediction accuracy
-   - Monitor drift
-   - Retrain when needed
-
-## Project Structure (Planned)
-
-```
+```text
 ml-service/
 ├── app/
-│   ├── main.py              # FastAPI app
-│   ├── routers/             # API routes
-│   ├── models/              # ML models
-│   ├── services/            # Business logic
-│   └── utils/               # Helper functions
-├── data/
-│   ├── raw/                 # Raw data
-│   ├── processed/           # Processed data
-│   └── models/              # Saved models
-├── notebooks/               # Jupyter notebooks
-├── tests/                   # Unit tests
-├── requirements.txt         # Dependencies
-└── Dockerfile              # Container config
+│   ├── main.py
+│   ├── schemas.py
+│   ├── routers/
+│   │   ├── predictions.py
+│   │   ├── risk.py
+│   │   └── recommendations.py
+│   └── services/
+│       ├── demand_service.py
+│       ├── risk_service.py
+│       └── restock_service.py
+├── tests/
+│   └── test_api.py
+├── requirements.txt
+└── README.md
 ```
 
-## Setup Instructions (When Implemented)
+## Setup
 
-1. Create virtual environment
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: venv\Scripts\activate
-   ```
+Use Python 3.13 or newer.
 
-2. Install dependencies
-   ```bash
-   pip install -r requirements.txt
-   ```
+```powershell
+cd ml-service
+python -m venv venv
+venv\Scripts\Activate.ps1
+python -m pip install --upgrade pip
+pip install -r requirements.txt
+```
 
-3. Run development server
-   ```bash
-   uvicorn app.main:app --reload
-   ```
+On macOS/Linux, activate the environment with `source venv/bin/activate`.
 
-4. Access API docs
-   ```
-   http://localhost:8000/docs
-   ```
+## Run the service
 
-## Model Performance Targets
+```powershell
+uvicorn app.main:app --reload
+```
 
-- **Demand Prediction MAPE**: < 15%
-- **Risk Classification Accuracy**: > 85%
-- **Prediction Latency**: < 100ms
-- **Batch Processing**: 1000+ products/second
+The service listens at `http://localhost:8000`. Interactive API documentation is available at `http://localhost:8000/docs`.
 
-## Status
+## Endpoints
 
-🔄 **Not yet implemented** - This will be Phase 3 of development
+### `GET /health`
+
+Returns `{ "status": "ok" }`.
+
+### `POST /api/v1/predict/demand`
+
+The Node/Express backend should query `StockMovement` records with `type: "OUT"` and send their dates and quantities. Supported forecast lengths are 7, 14, and 30 days.
+
+Request:
+
+```json
+{
+  "productId": 12,
+  "days": 7,
+  "historicalData": [
+    {"date": "2026-09-10", "quantity": 4},
+    {"date": "2026-09-11", "quantity": 6},
+    {"date": "2026-09-12", "quantity": 5}
+  ]
+}
+```
+
+Response:
+
+```json
+{
+  "productId": 12,
+  "days": 7,
+  "predictedDemand": 35,
+  "dailyForecast": [
+    {"date": "2026-09-13", "quantity": 5}
+  ],
+  "confidence": null,
+  "method": "rolling_average"
+}
+```
+
+The actual response contains one daily forecast entry for every requested day. Empty history returns zero quantities and a null confidence.
+
+### `POST /api/v1/risk/assess`
+
+Request:
+
+```json
+{"productId": 12, "currentStock": 20, "predictedDemand": 35}
+```
+
+Returns `CRITICAL` for zero stock, `HIGH` when stock is below demand, and `LOW` when stock covers demand.
+
+### `POST /api/v1/recommend/restock`
+
+Request:
+
+```json
+{"productId": 12, "currentStock": 10, "predictedDemand": 35}
+```
+
+The recommendation is `max(predictedDemand - currentStock, 0)`. Priority is `critical` for zero stock, `high` for insufficient positive stock, and `low` when current stock covers demand.
+
+## Tests
+
+```powershell
+pytest
+```
+
+No forecasting model such as Prophet, ARIMA, or LSTM is included in this version.
