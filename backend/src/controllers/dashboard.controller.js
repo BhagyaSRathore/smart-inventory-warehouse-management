@@ -7,16 +7,36 @@ export const getDashboard = async (req, res) => {
     const inventories = await db.orm.public.Inventory.all();
     const orders = await db.orm.public.Order.all();
     const movements = await db.orm.public.StockMovement.all();
+    
     const totalStock = inventories.reduce(
       (total, item) => total + item.quantity,
       0
     );
+    
+    // Create a product map for quick lookup
+    const productMap = {};
+    products.forEach(product => {
+      productMap[product.id] = product;
+    });
+    
+    // Calculate low stock using product.reorderLevel
     const lowStockProducts = inventories.filter(
-      (item) => item.quantity < 10
+      (item) => {
+        const product = productMap[item.productId];
+        if (!product) return false;
+        return item.quantity <= product.reorderLevel;
+      }
     );
+    
+    // Calculate out of stock
+    const outOfStockProducts = inventories.filter(
+      (item) => item.quantity === 0
+    );
+    
     const pendingOrders = orders.filter(
       (order) => order.status === "pending"
     );
+    
     res.json({
       message: "Dashboard data fetched successfully",
       summary: {
@@ -24,11 +44,13 @@ export const getDashboard = async (req, res) => {
         totalWarehouses: warehouses.length,
         totalStock,
         lowStockCount: lowStockProducts.length,
+        outOfStockCount: outOfStockProducts.length,
         pendingOrders: pendingOrders.length,
         totalOrders: orders.length,
       },
       lowStockProducts,
-      recentStockMovements: movements.slice(-5),
+      outOfStockProducts,
+      recentStockMovements: movements.slice(-10),
     });
   } catch (error) {
     console.error(error);
