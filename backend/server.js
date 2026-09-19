@@ -1,4 +1,5 @@
 import mlRoutes from "./src/routes/ml.routes.js";
+import aiRoutes from "./src/routes/ai.routes.js";
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
@@ -17,6 +18,7 @@ import { db } from "./src/db.ts";
 const app = express();
 app.use(cors());
 app.use(express.json());
+app.use("/api/ai", aiRoutes);
 app.use("/api", mlRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
