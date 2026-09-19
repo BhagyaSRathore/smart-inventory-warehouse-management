@@ -231,6 +231,8 @@ export const getRestockRecommendation = async (req, res) => {
             productId,
             currentStock: data.currentStock,
             predictedDemand: demand.predictedDemand,
+            reorderLevel: data.product.reorderLevel,
+            safetyStock: data.product.safetyStock,
         });
 
         return res.json({
