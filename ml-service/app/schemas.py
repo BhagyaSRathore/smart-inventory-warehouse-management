@@ -56,7 +56,8 @@ class StockRiskResponse(BaseModel):
 
 
 class RestockRequest(StockAssessmentRequest):
-    pass
+    reorder_level: int | None = Field(default=None, alias="reorderLevel", ge=0)
+    safety_stock: int | None = Field(default=None, alias="safetyStock", ge=0)
 
 
 class RestockResponse(BaseModel):

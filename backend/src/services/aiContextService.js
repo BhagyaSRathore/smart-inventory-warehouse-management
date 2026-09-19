@@ -238,6 +238,8 @@ const getMLContext = async (product, inventories, movements, message, intent) =>
         productId: product.id,
         currentStock,
         predictedDemand: prediction.predictedDemand,
+        reorderLevel: product.reorderLevel,
+        safetyStock: product.safetyStock,
       });
     }
 
@@ -278,7 +280,7 @@ const getProductContext = async (product, message, intent) => {
   };
 };
 
-const getOverviewContext = async (products, intent) => {
+const getOverviewContext = async (products, intent, message) => {
   const inventories = await db.orm.public.Inventory.all();
   const warehouses = await db.orm.public.Warehouse.all();
   const movements = await db.orm.public.StockMovement.all();
@@ -318,6 +320,41 @@ const getOverviewContext = async (products, intent) => {
       createdAt: toIsoString(movement.createdAt),
     }));
 
+  let mlContext = { status: "not_requested" };
+  if (intent && products.length) {
+    const productML = await Promise.all(
+      products.map(async (product) => {
+        const productInventories = inventories.filter(
+          (inventory) => inventory.productId === product.id,
+        );
+        const productMovements = movements.filter(
+          (movement) => movement.productId === product.id,
+        );
+
+        return {
+          product: formatProduct(product),
+          ml: await getMLContext(
+            product,
+            productInventories,
+            productMovements,
+            message,
+            intent,
+          ),
+        };
+      }),
+    );
+
+    mlContext = {
+      status: "available",
+      products: productML,
+    };
+  } else if (intent) {
+    mlContext = {
+      status: "product_required",
+      message: "No products are available for demand, risk, or restock analysis.",
+    };
+  }
+
   return {
     status: "overview",
     products: products.map(formatProduct),
@@ -328,14 +365,7 @@ const getOverviewContext = async (products, intent) => {
     })),
     inventory: inventoryDetails,
     recentStockMovements: movementDetails,
-    ml: intent
-      ? {
-          status: "product_required",
-          message: "A specific product is required for a demand, risk, or restock analysis.",
-        }
-      : {
-          status: "not_requested",
-        },
+    ml: mlContext,
   };
 };
 
@@ -345,7 +375,7 @@ export const getAIContext = async (message) => {
   const reference = getProductReference(message, products);
 
   if (!reference) {
-    return getOverviewContext(products, intent);
+    return getOverviewContext(products, intent, message);
   }
 
   if (reference.kind === "name" && reference.products.length > 1) {

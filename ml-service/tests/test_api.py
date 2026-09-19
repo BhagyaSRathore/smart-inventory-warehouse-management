@@ -49,6 +49,15 @@ def test_demand_prediction_with_empty_historical_data() -> None:
     assert body["confidence"] is None
 
 
+def test_demand_prediction_rejects_invalid_days() -> None:
+    response = client.post(
+        "/api/v1/predict/demand",
+        json={"productId": 12, "days": 8, "historicalData": []},
+    )
+
+    assert response.status_code == 422
+
+
 def test_critical_risk_when_stock_is_zero() -> None:
     response = client.post(
         "/api/v1/risk/assess",
@@ -99,3 +108,34 @@ def test_restock_quantity_when_stock_is_sufficient() -> None:
     assert response.status_code == 200
     assert response.json()["recommendedQuantity"] == 0
     assert response.json()["priority"] == "low"
+
+
+def test_restock_uses_reorder_and_safety_thresholds() -> None:
+    response = client.post(
+        "/api/v1/recommend/restock",
+        json={
+            "productId": 12,
+            "currentStock": 20,
+            "predictedDemand": 25,
+            "reorderLevel": 30,
+            "safetyStock": 10,
+        },
+    )
+
+    assert response.status_code == 200
+    assert response.json()["recommendedQuantity"] == 20
+    assert response.json()["priority"] == "high"
+
+
+def test_restock_rejects_negative_thresholds() -> None:
+    response = client.post(
+        "/api/v1/recommend/restock",
+        json={
+            "productId": 12,
+            "currentStock": 20,
+            "predictedDemand": 25,
+            "reorderLevel": -1,
+        },
+    )
+
+    assert response.status_code == 422
