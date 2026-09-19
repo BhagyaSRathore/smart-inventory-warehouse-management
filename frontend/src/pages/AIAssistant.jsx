@@ -9,6 +9,8 @@ export default function AIAssistant() {
     }
   ]);
   const [input, setInput] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const sampleQuestions = [
     'Which products are low in stock?',
@@ -18,17 +20,37 @@ export default function AIAssistant() {
     'Why is product M101 high risk?'
   ];
 
-  const handleSendMessage = (question) => {
+  const handleSendMessage = async (question) => {
+    if (isLoading) return;
+
     const userMessage = question || input;
-    if (!userMessage.trim()) return;
+    if (!userMessage.trim()) {
+      setError('Please enter a message before sending.');
+      return;
+    }
 
     setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
     setInput('');
+    setError('');
+    setIsLoading(true);
 
-    setTimeout(() => {
-      const response = askAI(userMessage);
-      setMessages(prev => [...prev, { role: 'assistant', content: response }]);
-    }, 500);
+    try {
+      const data = await askAI(userMessage.trim());
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: data.response || 'The AI returned an empty response.'
+      }]);
+    } catch (requestError) {
+      const responseMessage = requestError.status === 401
+        ? 'Please sign in again to use the AI assistant.'
+        : requestError.status
+          ? requestError.message
+          : 'The backend is unavailable. Please try again.';
+
+      setMessages(prev => [...prev, { role: 'assistant', content: responseMessage }]);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -44,7 +66,7 @@ export default function AIAssistant() {
             <h3 className="card-title">Chat</h3>
           </div>
 
-          <div style={{ flex: 1, overflowY: 'auto', padding: '16px', backgroundColor: '#f9fafb', borderRadius: '8px', marginBottom: '16px' }}>
+          <div style={{ flex: 1, overflowY: 'auto', padding: '16px', backgroundColor: '#f9fafb', borderRadius: '8px', marginBottom: '16px' }} aria-live="polite">
             {messages.map((message, index) => (
               <div
                 key={index}
@@ -74,12 +96,19 @@ export default function AIAssistant() {
             ))}
           </div>
 
+          {error && (
+            <div role="alert" style={{ marginBottom: '12px', color: '#b91c1c', fontSize: '13px' }}>
+              {error}
+            </div>
+          )}
+
           <div style={{ display: 'flex', gap: '8px' }}>
             <input
               type="text"
               value={input}
               onChange={(e) => setInput(e.target.value)}
-              onKeyPress={(e) => e.key === 'Enter' && handleSendMessage()}
+              onKeyDown={(e) => e.key === 'Enter' && handleSendMessage()}
+              disabled={isLoading}
               placeholder="Ask me anything about inventory..."
               style={{
                 flex: 1,
@@ -90,8 +119,8 @@ export default function AIAssistant() {
                 outline: 'none'
               }}
             />
-            <button onClick={() => handleSendMessage()} className="btn btn-primary">
-              Send
+            <button onClick={() => handleSendMessage()} className="btn btn-primary" disabled={isLoading}>
+              {isLoading ? 'Sending...' : 'Send'}
             </button>
           </div>
         </div>
@@ -130,11 +159,11 @@ export default function AIAssistant() {
           </div>
 
           <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#fef3c7', borderRadius: '8px', border: '1px solid #f59e0b' }}>
-            <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#78350f', marginBottom: '8px' }}>
-              ℹ️ Demo Mode
+              <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#78350f', marginBottom: '8px' }}>
+              ℹ️ Backend AI
             </h4>
             <p style={{ fontSize: '13px', color: '#78350f', lineHeight: '1.6', margin: 0 }}>
-              This is a frontend demo. In production, responses will be powered by Google Gemini API integrated through the Node.js backend.
+              Responses are powered by the authenticated backend AI service.
             </p>
           </div>
         </div>

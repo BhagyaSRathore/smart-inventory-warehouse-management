@@ -15,10 +15,17 @@ async function apiRequest(endpoint, options = {}) {
     },
   });
 
-  const data = await response.json();
+  let data = {};
+  try {
+    data = await response.json();
+  } catch {
+    data = {};
+  }
 
   if (!response.ok) {
-    throw new Error(data.message || "API request failed");
+    const error = new Error(data.message || "API request failed");
+    error.status = response.status;
+    throw error;
   }
 
   return data;
@@ -157,43 +164,11 @@ export function getRestockByProduct(productId) {
 }
 
 // AI Assistant
-export function askAI(question) {
-  // Demo responses for common questions
-  const responses = {
-    'low stock': 'Based on current inventory data, you have 12 products with low stock levels:\n\n1. USB-C Cable 2m (12 units)\n2. Webcam HD (18 units)\n3. Ballpoint Pen Set (22 units)\n4. Mechanical Keyboard (35 units)\n\nI recommend prioritizing restocking USB-C Cable 2m as it has the highest predicted demand.',
-    
-    'restock': 'Here are the top 5 products requiring immediate restocking:\n\n1. USB-C Hub (Critical - Out of stock)\n2. Desk Lamp LED (Critical - Out of stock)\n3. USB-C Cable 2m (Critical - Only 12 units left)\n4. Mechanical Keyboard (High priority - 35 units)\n5. Webcam HD (High priority - 18 units)\n\nWould you like me to generate purchase orders for these items?',
-    
-    'warehouse': 'Warehouse B in Delhi NCR currently has the most stock with 9,500 units (63% capacity utilization). It holds 685 different products across 5 racks.\n\nWarehouse A in Jaipur has 7,200 units (72% utilization) and Warehouse C in Mumbai has 4,800 units (60% utilization).',
-    
-    'run out': 'Based on ML predictions, these products may run out in the next 7 days:\n\n1. USB-C Hub - Already out of stock\n2. Desk Lamp LED - Already out of stock\n3. USB-C Cable 2m - Will run out in 2-3 days\n4. Webcam HD - Will reach critical levels in 4-5 days\n5. Ballpoint Pen Set - Will reach low stock in 5-6 days',
-    
-    'risk': 'Product M101 (Wireless Mouse) currently shows LOW risk because:\n\n• Current stock: 145 units\n• Predicted 7-day demand: 32 units\n• Predicted 30-day demand: 135 units\n• Reorder level: 50 units\n• Demand trend: Increasing\n\nThe stock level is well above the reorder point and can cover more than 30 days of expected demand. However, monitor the increasing trend closely.',
-    
-    'default': 'I\'m your AI Inventory Assistant. I can help you with:\n\n• Identifying low stock products\n• Recommending restock quantities\n• Analyzing warehouse capacity\n• Predicting stock risks\n• Explaining demand trends\n• Optimizing inventory levels\n\nWhat would you like to know?'
-  };
-
-  // Simple keyword matching for demo
-  const lowerQuestion = question.toLowerCase();
-  
-  if (lowerQuestion.includes('low') && lowerQuestion.includes('stock')) {
-    return responses['low stock'];
-  }
-  if (lowerQuestion.includes('restock') || lowerQuestion.includes('replenish')) {
-    return responses['restock'];
-  }
-  if (lowerQuestion.includes('warehouse') || lowerQuestion.includes('most stock')) {
-    return responses['warehouse'];
-  }
-  if (lowerQuestion.includes('run out') || lowerQuestion.includes('run-out')) {
-    return responses['run out'];
-  }
-  if (lowerQuestion.includes('risk') || lowerQuestion.includes('m101')) {
-    return responses['risk'];
-  }
-  
-  return responses['default'];
-}
+export const askAI = (question) =>
+  apiRequest("/ai/chat", {
+    method: "POST",
+    body: JSON.stringify({ message: question }),
+  });
 
 // Dashboard Statistics
 export function getDashboardStats() {
