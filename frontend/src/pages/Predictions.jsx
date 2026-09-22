@@ -1,15 +1,54 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getPredictions } from '../services/api';
 import StatusBadge from '../components/StatusBadge';
 
 export default function Predictions() {
-  const predictions = getPredictions();
+  const [predictions, setPredictions] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    let active = true;
+
+    const loadPredictions = async () => {
+      try {
+        setLoading(true);
+        const result = await getPredictions();
+
+        if (!active) return;
+        setPredictions(result || []);
+        setError('');
+      } catch (requestError) {
+        if (!active) return;
+        setError(requestError.message || 'Unable to load demand predictions.');
+      } finally {
+        if (active) {
+          setLoading(false);
+        }
+      }
+    };
+
+    loadPredictions();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  if (loading) {
+    return <div className="card"><div className="empty-state"><div className="empty-state-title">Loading demand predictions…</div></div></div>;
+  }
+
+  if (error) {
+    return <div className="card"><div className="empty-state"><div className="empty-state-title">Unable to load demand predictions.</div><div className="empty-state-description">{error}</div></div></div>;
+  }
 
   return (
     <div>
       <div className="page-header">
         <h1 className="page-title">📈 Demand Predictions</h1>
-        <p className="page-subtitle">ML-powered demand forecasting</p>
+        <p className="page-subtitle">Forecasted demand based on live stock and reorder levels</p>
       </div>
 
       <div className="card" style={{ marginBottom: '24px', backgroundColor: '#e0e7ff', border: '2px solid #4f46e5' }}>
@@ -17,8 +56,7 @@ export default function Predictions() {
           ℹ️ About Demand Predictions
         </h3>
         <p style={{ fontSize: '14px', lineHeight: '1.6', color: '#3730a3', margin: 0 }}>
-          These predictions are generated using machine learning models that analyze historical sales data, seasonality patterns, and market trends. 
-          In production, this data will come from the Python ML service (FastAPI) which will be integrated with the backend.
+          These forecasts use the live product catalog and current inventory levels, so the page stays fully operational even before the external ML service is connected.
         </p>
       </div>
 
@@ -41,7 +79,7 @@ export default function Predictions() {
             </tr>
           </thead>
           <tbody>
-            {predictions.map(pred => (
+            {predictions.length ? predictions.map((pred) => (
               <tr key={pred.id}>
                 <td>
                   <Link to={`/products/${pred.productId}`} className="link">
@@ -49,9 +87,8 @@ export default function Predictions() {
                   </Link>
                 </td>
                 <td>
-                  <strong style={{ 
-                    color: pred.currentStock === 0 ? '#ef4444' : 
-                           pred.currentStock < pred.predicted7Day ? '#f59e0b' : '#10b981' 
+                  <strong style={{
+                    color: pred.currentStock === 0 ? '#ef4444' : pred.currentStock < pred.predicted7Day ? '#f59e0b' : '#10b981'
                   }}>
                     {pred.currentStock}
                   </strong> units
@@ -82,25 +119,11 @@ export default function Predictions() {
                   </Link>
                 </td>
               </tr>
-            ))}
+            )) : (
+              <tr><td colSpan="8" className="empty-state">No demand prediction data available.</td></tr>
+            )}
           </tbody>
         </table>
-      </div>
-
-      <div className="grid grid-2" style={{ marginTop: '24px' }}>
-        <div className="card">
-          <h3 className="card-title" style={{ marginBottom: '16px' }}>Historical vs Predicted Demand</h3>
-          <div className="chart-container">
-            Chart: Line chart showing historical sales vs predicted demand
-          </div>
-        </div>
-
-        <div className="card">
-          <h3 className="card-title" style={{ marginBottom: '16px' }}>Risk Distribution</h3>
-          <div className="chart-container">
-            Chart: Pie chart showing risk level distribution (Critical, High, Medium, Low)
-          </div>
-        </div>
       </div>
     </div>
   );

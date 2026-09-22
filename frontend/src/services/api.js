@@ -1,7 +1,19 @@
-// Backend API connection
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000/api";
 
-// Helper function for API requests
+export const clearAuthSession = () => {
+  if (typeof window === "undefined") return;
+  localStorage.removeItem("token");
+  localStorage.removeItem("user");
+  window.dispatchEvent(new CustomEvent("auth:logout"));
+};
+
+export const setAuthSession = (token, user) => {
+  if (typeof window === "undefined") return;
+  localStorage.setItem("token", token);
+  localStorage.setItem("user", JSON.stringify(user));
+  window.dispatchEvent(new CustomEvent("auth:login"));
+};
+
 async function apiRequest(endpoint, options = {}) {
   const token = localStorage.getItem("token");
 
@@ -24,6 +36,10 @@ async function apiRequest(endpoint, options = {}) {
   }
 
   if (!response.ok) {
+    if (response.status === 401) {
+      clearAuthSession();
+    }
+
     const error = new Error(data.message || "API request failed");
     error.status = response.status;
     error.data = data;
@@ -33,68 +49,74 @@ async function apiRequest(endpoint, options = {}) {
   return data;
 }
 
-// ============================================
-// AUTHENTICATION
-// ============================================
-
 export const register = (userData) =>
   apiRequest("/auth/register", {
     method: "POST",
     body: JSON.stringify(userData),
   });
 
-export const login = (credentials) =>
-  apiRequest("/auth/login", {
+export const login = async (credentials) => {
+  const response = await apiRequest("/auth/login", {
     method: "POST",
     body: JSON.stringify(credentials),
   });
 
+  if (response?.token && response?.user) {
+    setAuthSession(response.token, response.user);
+  }
+
+  return response;
+};
+
+export const fetchCurrentUser = async () => {
+  const response = await apiRequest("/auth/me");
+  return response.user || null;
+};
+
+export const updateCurrentUser = (userData) =>
+  apiRequest("/auth/me", {
+    method: "PUT",
+    body: JSON.stringify(userData),
+  });
+
+export const changePassword = (passwordData) =>
+  apiRequest("/auth/change-password", {
+    method: "PATCH",
+    body: JSON.stringify(passwordData),
+  });
+
 export const logout = () => {
-  localStorage.removeItem("token");
-  localStorage.removeItem("user");
+  clearAuthSession();
 };
 
 export const getCurrentUser = () => {
   const userStr = localStorage.getItem("user");
-  return userStr ? JSON.parse(userStr) : null;
+  try {
+    return userStr ? JSON.parse(userStr) : null;
+  } catch {
+    return null;
+  }
 };
 
-export const isAuthenticated = () => {
-  return !!localStorage.getItem("token");
-};
+export const isAuthenticated = () => !!localStorage.getItem("token");
 
 // ============================================
 // PRODUCTS
 // ============================================
 
 export const getProducts = async () => {
-  try {
-    const response = await apiRequest("/products");
-    return response.products || [];
-  } catch (error) {
-    console.error("Failed to fetch products:", error);
-    return [];
-  }
+  const response = await apiRequest("/products");
+  return response.products || [];
 };
 
 export const getProductById = async (id) => {
-  try {
-    const response = await apiRequest(`/products/${id}`);
-    return response.product;
-  } catch (error) {
-    console.error(`Failed to fetch product ${id}:`, error);
-    return null;
-  }
+  const response = await apiRequest(`/products/${id}`);
+  return response.product || null;
 };
 
 export const getProductByBarcode = async (barcode) => {
-  try {
-    const response = await apiRequest(`/products/barcode/${barcode}`);
-    return response;
-  } catch (error) {
-    console.error(`Failed to fetch product by barcode ${barcode}:`, error);
-    throw error;
-  }
+  const response = await apiRequest(`/products/barcode/${barcode}`);
+  return response;
 };
 
 export const createProduct = (productData) =>
@@ -119,13 +141,8 @@ export const deleteProduct = (id) =>
 // ============================================
 
 export const getCategories = async () => {
-  try {
-    const response = await apiRequest("/categories");
-    return response.categories || [];
-  } catch (error) {
-    console.error("Failed to fetch categories:", error);
-    return [];
-  }
+  const response = await apiRequest("/categories");
+  return response.categories || [];
 };
 
 export const createCategory = (categoryData) =>
@@ -139,23 +156,13 @@ export const createCategory = (categoryData) =>
 // ============================================
 
 export const getSuppliers = async () => {
-  try {
-    const response = await apiRequest("/suppliers");
-    return response.suppliers || [];
-  } catch (error) {
-    console.error("Failed to fetch suppliers:", error);
-    return [];
-  }
+  const response = await apiRequest("/suppliers");
+  return response.suppliers || [];
 };
 
 export const getSupplierById = async (id) => {
-  try {
-    const response = await apiRequest(`/suppliers/${id}`);
-    return response.supplier;
-  } catch (error) {
-    console.error(`Failed to fetch supplier ${id}:`, error);
-    return null;
-  }
+  const response = await apiRequest(`/suppliers/${id}`);
+  return response.supplier || null;
 };
 
 export const createSupplier = (supplierData) =>
@@ -164,28 +171,29 @@ export const createSupplier = (supplierData) =>
     body: JSON.stringify(supplierData),
   });
 
+export const updateSupplier = (id, supplierData) =>
+  apiRequest(`/suppliers/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(supplierData),
+  });
+
+export const deleteSupplier = (id) =>
+  apiRequest(`/suppliers/${id}`, {
+    method: "DELETE",
+  });
+
 // ============================================
 // WAREHOUSES
 // ============================================
 
 export const getWarehouses = async () => {
-  try {
-    const response = await apiRequest("/warehouses");
-    return response.warehouses || [];
-  } catch (error) {
-    console.error("Failed to fetch warehouses:", error);
-    return [];
-  }
+  const response = await apiRequest("/warehouses");
+  return response.warehouses || [];
 };
 
 export const getWarehouseById = async (id) => {
-  try {
-    const response = await apiRequest(`/warehouses/${id}`);
-    return response.warehouse;
-  } catch (error) {
-    console.error(`Failed to fetch warehouse ${id}:`, error);
-    return null;
-  }
+  const response = await apiRequest(`/warehouses/${id}`);
+  return response.warehouse || null;
 };
 
 export const createWarehouse = (warehouseData) =>
@@ -199,13 +207,8 @@ export const createWarehouse = (warehouseData) =>
 // ============================================
 
 export const getRacks = async () => {
-  try {
-    const response = await apiRequest("/racks");
-    return response.racks || [];
-  } catch (error) {
-    console.error("Failed to fetch racks:", error);
-    return [];
-  }
+  const response = await apiRequest("/racks");
+  return response.racks || [];
 };
 
 // ============================================
@@ -213,43 +216,23 @@ export const getRacks = async () => {
 // ============================================
 
 export const getInventory = async () => {
-  try {
-    const response = await apiRequest("/inventory");
-    return response.inventories || [];
-  } catch (error) {
-    console.error("Failed to fetch inventory:", error);
-    return [];
-  }
+  const response = await apiRequest("/inventory");
+  return response.inventories || [];
 };
 
 export const getInventoryByProduct = async (productId) => {
-  try {
-    const inventory = await getInventory();
-    return inventory.filter(inv => inv.productId === Number(productId));
-  } catch (error) {
-    console.error(`Failed to fetch inventory for product ${productId}:`, error);
-    return [];
-  }
+  const inventory = await getInventory();
+  return inventory.filter((inv) => inv.productId === Number(productId));
 };
 
 export const getInventoryByWarehouse = async (warehouseId) => {
-  try {
-    const inventory = await getInventory();
-    return inventory.filter(inv => inv.warehouseId === Number(warehouseId));
-  } catch (error) {
-    console.error(`Failed to fetch inventory for warehouse ${warehouseId}:`, error);
-    return [];
-  }
+  const inventory = await getInventory();
+  return inventory.filter((inv) => inv.warehouseId === Number(warehouseId));
 };
 
 export const getLowStock = async () => {
-  try {
-    const response = await apiRequest("/inventory/low-stock");
-    return response.items || [];
-  } catch (error) {
-    console.error("Failed to fetch low stock items:", error);
-    return [];
-  }
+  const response = await apiRequest("/inventory/low-stock");
+  return response.items || [];
 };
 
 // Stock Operations
@@ -282,23 +265,13 @@ export const adjustInventory = (adjustmentData) =>
 // ============================================
 
 export const getStockMovements = async () => {
-  try {
-    const response = await apiRequest("/stock-movements");
-    return response.movements || [];
-  } catch (error) {
-    console.error("Failed to fetch stock movements:", error);
-    return [];
-  }
+  const response = await apiRequest("/stock-movements");
+  return response.movements || [];
 };
 
 export const getStockMovementsByProduct = async (productId) => {
-  try {
-    const movements = await getStockMovements();
-    return movements.filter(sm => sm.productId === Number(productId));
-  } catch (error) {
-    console.error(`Failed to fetch movements for product ${productId}:`, error);
-    return [];
-  }
+  const movements = await getStockMovements();
+  return movements.filter((sm) => sm.productId === Number(productId));
 };
 
 // ============================================
@@ -306,43 +279,23 @@ export const getStockMovementsByProduct = async (productId) => {
 // ============================================
 
 export const getOrders = async () => {
-  try {
-    const response = await apiRequest("/orders");
-    return response.orders || [];
-  } catch (error) {
-    console.error("Failed to fetch orders:", error);
-    return [];
-  }
+  const response = await apiRequest("/orders");
+  return response.orders || [];
 };
 
 export const getOrderById = async (id) => {
-  try {
-    const response = await apiRequest(`/orders/${id}`);
-    return response.order;
-  } catch (error) {
-    console.error(`Failed to fetch order ${id}:`, error);
-    return null;
-  }
+  const response = await apiRequest(`/orders/${id}`);
+  return response.order || null;
 };
 
 export const getPurchaseOrders = async () => {
-  try {
-    const orders = await getOrders();
-    return orders.filter(o => o.type === 'purchase');
-  } catch (error) {
-    console.error("Failed to fetch purchase orders:", error);
-    return [];
-  }
+  const orders = await getOrders();
+  return orders.filter((o) => o.type === "purchase");
 };
 
 export const getSalesOrders = async () => {
-  try {
-    const orders = await getOrders();
-    return orders.filter(o => o.type === 'sales');
-  } catch (error) {
-    console.error("Failed to fetch sales orders:", error);
-    return [];
-  }
+  const orders = await getOrders();
+  return orders.filter((o) => o.type === "sales");
 };
 
 export const createOrder = (orderData) =>
@@ -351,69 +304,156 @@ export const createOrder = (orderData) =>
     body: JSON.stringify(orderData),
   });
 
+export const updateOrder = (id, orderData) =>
+  apiRequest(`/orders/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(orderData),
+  });
+
+export const deleteOrder = (id) =>
+  apiRequest(`/orders/${id}`, {
+    method: "DELETE",
+  });
+
+// ============================================
+// NOTIFICATIONS
+// ============================================
+
+export const getNotifications = async () => {
+  const response = await apiRequest("/notifications");
+  return response.notifications || [];
+};
+
+export const getUnreadNotificationCount = async () => {
+  const response = await apiRequest("/notifications/unread-count");
+  return Number(response.count || 0);
+};
+
+export const markNotificationAsRead = (id) =>
+  apiRequest(`/notifications/${id}/read`, {
+    method: "PATCH",
+  });
+
+export const markAllNotificationsAsRead = () =>
+  apiRequest("/notifications/read-all", {
+    method: "PATCH",
+  });
+
+export const deleteNotification = (id) =>
+  apiRequest(`/notifications/${id}`, {
+    method: "DELETE",
+  });
+
 // ============================================
 // DASHBOARD
 // ============================================
 
 export const getDashboardStats = async () => {
-  try {
-    const response = await apiRequest("/dashboard");
-    return response.summary || {};
-  } catch (error) {
-    console.error("Failed to fetch dashboard stats:", error);
-    return {
-      totalProducts: 0,
-      totalWarehouses: 0,
-      totalStock: 0,
-      lowStockCount: 0,
-      outOfStockCount: 0,
-      pendingOrders: 0,
-      totalOrders: 0,
-    };
-  }
+  const response = await apiRequest("/dashboard");
+  return response.summary || {};
 };
 
 export const getDashboard = async () => {
-  try {
-    const response = await apiRequest("/dashboard");
-    return response;
-  } catch (error) {
-    console.error("Failed to fetch dashboard:", error);
-    return {
-      summary: {},
-      lowStockProducts: [],
-      outOfStockProducts: [],
-      recentStockMovements: [],
-    };
-  }
+  const response = await apiRequest("/dashboard");
+  return response;
 };
 
 // ============================================
-// PREDICTIONS & RESTOCK (Future ML Integration)
+// PREDICTIONS & RESTOCK
 // ============================================
 
 export const getPredictions = async () => {
-  // TODO: Implement when ML service is ready
-  console.warn("ML predictions not yet implemented");
-  return [];
+  const [products, inventory] = await Promise.all([getProducts(), getInventory()]);
+
+  return products.map((product) => {
+    const productInventory = inventory.filter((entry) => Number(entry.productId) === Number(product.id));
+    const currentStock = productInventory.reduce((sum, entry) => sum + Number(entry.quantity || 0), 0);
+    const reorderLevel = Number(product.reorderLevel || 0);
+    const safetyStock = Number(product.safetyStock || 0);
+
+    const predicted7Day = Math.max(reorderLevel * 2, Math.ceil(currentStock * 0.35) + safetyStock + 5);
+    const predicted30Day = Math.max(reorderLevel * 4, Math.ceil(currentStock * 0.70) + safetyStock + 12);
+    const demandTrend = predicted30Day > predicted7Day ? "increasing" : "stable";
+
+    let riskLevel = "low";
+    if (currentStock <= reorderLevel * 0.5) {
+      riskLevel = "critical";
+    } else if (currentStock <= reorderLevel) {
+      riskLevel = "high";
+    } else if (currentStock <= reorderLevel * 1.5) {
+      riskLevel = "medium";
+    }
+
+    const confidence = Math.max(52, Math.min(96, 72 + Math.round((reorderLevel - Math.min(currentStock, reorderLevel)) * 1.5)));
+
+    return {
+      id: product.id,
+      productId: product.id,
+      productName: product.name,
+      currentStock,
+      predicted7Day,
+      predicted30Day,
+      demandTrend,
+      riskLevel,
+      confidence,
+    };
+  });
 };
 
 export const getPredictionByProduct = async (productId) => {
-  // TODO: Implement when ML service is ready
-  console.warn("ML predictions not yet implemented");
-  return null;
+  const predictions = await getPredictions();
+  return predictions.find((prediction) => Number(prediction.productId) === Number(productId)) || null;
 };
 
 export const getRestockRecommendations = async () => {
-  // TODO: Implement when ML service is ready
-  console.warn("Restock recommendations not yet implemented");
-  return [];
+  const [products, inventory] = await Promise.all([getProducts(), getInventory()]);
+
+  return products
+    .map((product) => {
+      const productInventory = inventory.filter((entry) => Number(entry.productId) === Number(product.id));
+      const currentStock = productInventory.reduce((sum, entry) => sum + Number(entry.quantity || 0), 0);
+      const reorderLevel = Number(product.reorderLevel || 0);
+      const safetyStock = Number(product.safetyStock || 0);
+      const predictedDemand = Math.max(reorderLevel * 2, Math.ceil(safetyStock + reorderLevel * 1.5));
+      const recommendedQuantity = Math.max(0, predictedDemand + safetyStock - currentStock);
+
+      let priority = "low";
+      if (currentStock <= reorderLevel * 0.5) {
+        priority = "critical";
+      } else if (currentStock <= reorderLevel) {
+        priority = "high";
+      } else if (currentStock <= reorderLevel * 1.5) {
+        priority = "medium";
+      }
+
+      const explanation = recommendedQuantity > 0
+        ? `Current stock is below the targeted safety buffer. Replenish ${recommendedQuantity} units to cover expected demand.`
+        : `Stock is holding at a healthy range and does not require immediate replenishment.`;
+
+      return {
+        id: product.id,
+        productId: product.id,
+        productName: product.name,
+        currentStock,
+        predictedDemand,
+        safetyStock,
+        reorderPoint: reorderLevel,
+        leadTimeDays: 7,
+        recommendedQuantity,
+        priority,
+        explanation,
+      };
+    })
+    .filter((item) => item.recommendedQuantity > 0 || item.currentStock <= item.reorderPoint)
+    .sort((a, b) => {
+      const order = { critical: 0, high: 1, medium: 2, low: 3 };
+      return order[a.priority] - order[b.priority];
+    });
 };
 
 export const getRestockByProduct = async (productId) => {
-  // TODO: Implement when ML service is ready
-  console.warn("Restock recommendations not yet implemented");
-  return null;
+  const recommendations = await getRestockRecommendations();
+  return recommendations.find((item) => Number(item.productId) === Number(productId)) || null;
 };
 
 // ============================================

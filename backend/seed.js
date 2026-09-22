@@ -1,99 +1,154 @@
+import "dotenv/config";
 import { db } from "./src/db.ts";
 import bcrypt from "bcrypt";
+
+await db.connect({ url: process.env.DATABASE_URL });
+
+async function ensureUser() {
+  const existing = await db.orm.public.User.first({ email: "admin@inventory.com" });
+  if (existing) {
+    console.log("✅ Admin user already exists");
+    return existing;
+  }
+
+  const passwordHash = await bcrypt.hash("admin123", 10);
+  const user = await db.orm.public.User.create({
+    email: "admin@inventory.com",
+    username: "admin",
+    name: "System Admin",
+    passwordHash,
+    role: "admin",
+  });
+  console.log("✅ Created admin user");
+  return user;
+}
+
+async function ensureCategory(name, description) {
+  const existing = await db.orm.public.Category.first({ name });
+  if (existing) return existing;
+
+  const created = await db.orm.public.Category.create({ name, description });
+  console.log(`✅ Created category: ${name}`);
+  return created;
+}
+
+async function ensureSupplier(payload) {
+  const existing = await db.orm.public.Supplier.first({ name: payload.name });
+  if (existing) return existing;
+
+  const created = await db.orm.public.Supplier.create(payload);
+  console.log(`✅ Created supplier: ${payload.name}`);
+  return created;
+}
+
+async function ensureWarehouse(name, location) {
+  const existing = await db.orm.public.Warehouse.first({ name });
+  if (existing) return existing;
+
+  const created = await db.orm.public.Warehouse.create({ name, location });
+  console.log(`✅ Created warehouse: ${name}`);
+  return created;
+}
+
+async function ensureRack(name, warehouseId) {
+  const existing = await db.orm.public.Rack.first({ name, warehouseId });
+  if (existing) return existing;
+
+  const created = await db.orm.public.Rack.create({ name, warehouseId });
+  console.log(`✅ Created rack: ${warehouseId}/${name}`);
+  return created;
+}
+
+async function ensureProduct(payload) {
+  const existing = await db.orm.public.Product.first({ sku: payload.sku });
+  if (existing) return existing;
+
+  const created = await db.orm.public.Product.create(payload);
+  console.log(`✅ Created product: ${payload.name}`);
+  return created;
+}
+
+async function ensureInventory(productId, warehouseId, rackId, quantity) {
+  const existing = await db.orm.public.Inventory.first({ productId, warehouseId, rackId });
+  if (existing) {
+    return existing;
+  }
+
+  const created = await db.orm.public.Inventory.create({ productId, warehouseId, rackId, quantity });
+  console.log(`✅ Created inventory: product ${productId} in warehouse ${warehouseId}`);
+  return created;
+}
+
+async function ensureStockMovement(payload) {
+  const existing = await db.orm.public.StockMovement.first({ referenceNumber: payload.referenceNumber, productId: payload.productId, warehouseId: payload.warehouseId, type: payload.type });
+  if (existing) return existing;
+
+  const created = await db.orm.public.StockMovement.create(payload);
+  console.log(`✅ Created stock movement: ${payload.referenceNumber}`);
+  return created;
+}
+
+async function ensureOrder(orderNumber, status = "pending") {
+  const existing = await db.orm.public.Order.first({ orderNumber });
+  if (existing) return existing;
+
+  const created = await db.orm.public.Order.create({ orderNumber, status });
+  console.log(`✅ Created order: ${orderNumber}`);
+  return created;
+}
+
+async function ensureOrderItem(orderId, productId, quantity) {
+  const existing = await db.orm.public.OrderItem.first({ orderId, productId });
+  if (existing) return existing;
+
+  const created = await db.orm.public.OrderItem.create({ orderId, productId, quantity });
+  console.log(`✅ Created order item: ${orderId}/${productId}`);
+  return created;
+}
 
 async function seed() {
   console.log("🌱 Seeding database...");
 
   try {
-    // Create admin user
-    console.log("Creating admin user...");
-    const passwordHash = await bcrypt.hash("admin123", 10);
-    const admin = await db.orm.public.User.create({
-      email: "admin@inventory.com",
-      username: "admin",
-      name: "System Admin",
-      passwordHash,
-      role: "admin",
-    });
-    console.log("✅ Created admin user");
+    const admin = await ensureUser();
 
-    // Create categories
     console.log("Creating categories...");
-    const electronics = await db.orm.public.Category.create({
-      name: "Electronics",
-      description: "Electronic devices and accessories",
-    });
-    const furniture = await db.orm.public.Category.create({
-      name: "Furniture",
-      description: "Office furniture",
-    });
-    const stationery = await db.orm.public.Category.create({
-      name: "Stationery",
-      description: "Office supplies and stationery",
-    });
-    console.log("✅ Created 3 categories");
+    const electronics = await ensureCategory("Electronics", "Electronic devices and accessories");
+    const furniture = await ensureCategory("Furniture", "Office furniture");
+    const stationery = await ensureCategory("Stationery", "Office supplies and stationery");
+    console.log("✅ Categories ready");
 
-    // Create suppliers
     console.log("Creating suppliers...");
-    const supplier1 = await db.orm.public.Supplier.create({
+    const supplier1 = await ensureSupplier({
       name: "Tech Supplies Inc",
       email: "contact@techsupplies.com",
       phone: "+1-555-0100",
       address: "123 Tech Street, Silicon Valley, CA 94025",
     });
-    const supplier2 = await db.orm.public.Supplier.create({
+    const supplier2 = await ensureSupplier({
       name: "Office World",
       email: "sales@officeworld.com",
       phone: "+1-555-0200",
       address: "456 Business Ave, New York, NY 10001",
     });
-    console.log("✅ Created 2 suppliers");
+    console.log("✅ Suppliers ready");
 
-    // Create warehouses
     console.log("Creating warehouses...");
-    const warehouse1 = await db.orm.public.Warehouse.create({
-      name: "Main Warehouse",
-      location: "New York, NY",
-    });
-    const warehouse2 = await db.orm.public.Warehouse.create({
-      name: "West Coast Warehouse",
-      location: "Los Angeles, CA",
-    });
-    const warehouse3 = await db.orm.public.Warehouse.create({
-      name: "Central Warehouse",
-      location: "Chicago, IL",
-    });
-    console.log("✅ Created 3 warehouses");
+    const warehouse1 = await ensureWarehouse("Main Warehouse", "New York, NY");
+    const warehouse2 = await ensureWarehouse("West Coast Warehouse", "Los Angeles, CA");
+    const warehouse3 = await ensureWarehouse("Central Warehouse", "Chicago, IL");
+    console.log("✅ Warehouses ready");
 
-    // Create racks for warehouse 1
     console.log("Creating racks...");
-    const rack1A = await db.orm.public.Rack.create({
-      name: "A1",
-      warehouseId: warehouse1.id,
-    });
-    const rack1B = await db.orm.public.Rack.create({
-      name: "A2",
-      warehouseId: warehouse1.id,
-    });
-    const rack1C = await db.orm.public.Rack.create({
-      name: "B1",
-      warehouseId: warehouse1.id,
-    });
+    const rack1A = await ensureRack("A1", warehouse1.id);
+    const rack1B = await ensureRack("A2", warehouse1.id);
+    const rack1C = await ensureRack("B1", warehouse1.id);
+    const rack2A = await ensureRack("A1", warehouse2.id);
+    const rack2B = await ensureRack("A2", warehouse2.id);
+    console.log("✅ Racks ready");
 
-    // Create racks for warehouse 2
-    const rack2A = await db.orm.public.Rack.create({
-      name: "A1",
-      warehouseId: warehouse2.id,
-    });
-    const rack2B = await db.orm.public.Rack.create({
-      name: "A2",
-      warehouseId: warehouse2.id,
-    });
-    console.log("✅ Created 5 racks");
-
-    // Create products
     console.log("Creating products...");
-    const laptop = await db.orm.public.Product.create({
+    const laptop = await ensureProduct({
       name: "Dell XPS 15 Laptop",
       sku: "LAP-XPS-15",
       barcode: "1234567890123",
@@ -106,7 +161,7 @@ async function seed() {
       supplierId: supplier1.id,
     });
 
-    const mouse = await db.orm.public.Product.create({
+    const mouse = await ensureProduct({
       name: "Wireless Mouse",
       sku: "MOU-WL-001",
       barcode: "2345678901234",
@@ -119,7 +174,7 @@ async function seed() {
       supplierId: supplier1.id,
     });
 
-    const keyboard = await db.orm.public.Product.create({
+    const keyboard = await ensureProduct({
       name: "Mechanical Keyboard",
       sku: "KEY-MECH-001",
       barcode: "3456789012345",
@@ -132,7 +187,7 @@ async function seed() {
       supplierId: supplier1.id,
     });
 
-    const monitor = await db.orm.public.Product.create({
+    const monitor = await ensureProduct({
       name: "27-inch 4K Monitor",
       sku: "MON-4K-27",
       barcode: "4567890123456",
@@ -145,7 +200,7 @@ async function seed() {
       supplierId: supplier1.id,
     });
 
-    const desk = await db.orm.public.Product.create({
+    const desk = await ensureProduct({
       name: "Standing Desk",
       sku: "DESK-STD-001",
       barcode: "5678901234567",
@@ -158,7 +213,7 @@ async function seed() {
       supplierId: supplier2.id,
     });
 
-    const chair = await db.orm.public.Product.create({
+    const chair = await ensureProduct({
       name: "Ergonomic Office Chair",
       sku: "CHR-ERG-001",
       barcode: "6789012345678",
@@ -171,7 +226,7 @@ async function seed() {
       supplierId: supplier2.id,
     });
 
-    const notebook = await db.orm.public.Product.create({
+    const notebook = await ensureProduct({
       name: "A4 Notebook Pack",
       sku: "NOTE-A4-10",
       barcode: "7890123456789",
@@ -184,7 +239,7 @@ async function seed() {
       supplierId: supplier2.id,
     });
 
-    const pens = await db.orm.public.Product.create({
+    const pens = await ensureProduct({
       name: "Ballpoint Pen Set",
       sku: "PEN-BP-12",
       barcode: "8901234567890",
@@ -197,7 +252,7 @@ async function seed() {
       supplierId: supplier2.id,
     });
 
-    console.log("✅ Created 8 products");
+    console.log("✅ Products ready");
 
     // Create initial inventory
     console.log("Creating inventory records...");

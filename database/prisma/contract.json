@@ -491,10 +491,24 @@
           },
           "Product": {
             "fields": {
+              "barcode": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "categoryId": {
                 "nullable": true,
                 "type": {
                   "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "costPrice": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/numeric@1",
                   "kind": "scalar"
                 }
               },
@@ -519,6 +533,13 @@
                   "kind": "scalar"
                 }
               },
+              "imageUrl": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
               "name": {
                 "nullable": false,
                 "type": {
@@ -530,6 +551,20 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/numeric@1",
+                  "kind": "scalar"
+                }
+              },
+              "reorderLevel": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "safetyStock": {
+                "nullable": false,
+                "type": {
+                  "codecId": "pg/int4@1",
                   "kind": "scalar"
                 }
               },
@@ -651,8 +686,14 @@
             },
             "storage": {
               "fields": {
+                "barcode": {
+                  "column": "barcode"
+                },
                 "categoryId": {
                   "column": "categoryId"
+                },
+                "costPrice": {
+                  "column": "costPrice"
                 },
                 "createdAt": {
                   "column": "createdAt"
@@ -663,11 +704,20 @@
                 "id": {
                   "column": "id"
                 },
+                "imageUrl": {
+                  "column": "imageUrl"
+                },
                 "name": {
                   "column": "name"
                 },
                 "price": {
                   "column": "price"
+                },
+                "reorderLevel": {
+                  "column": "reorderLevel"
+                },
+                "safetyStock": {
+                  "column": "safetyStock"
                 },
                 "sku": {
                   "column": "sku"
@@ -737,6 +787,21 @@
                   "namespace": "public"
                 }
               },
+              "stockMoves": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "rackId"
+                  ]
+                },
+                "to": {
+                  "model": "StockMovement",
+                  "namespace": "public"
+                }
+              },
               "warehouse": {
                 "cardinality": "N:1",
                 "nullable": false,
@@ -792,6 +857,20 @@
                   "kind": "scalar"
                 }
               },
+              "notes": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
+                  "kind": "scalar"
+                }
+              },
+              "performedBy": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
               "productId": {
                 "nullable": false,
                 "type": {
@@ -803,6 +882,20 @@
                 "nullable": false,
                 "type": {
                   "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "rackId": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/int4@1",
+                  "kind": "scalar"
+                }
+              },
+              "referenceNumber": {
+                "nullable": true,
+                "type": {
+                  "codecId": "pg/text@1",
                   "kind": "scalar"
                 }
               },
@@ -838,6 +931,38 @@
                   "namespace": "public"
                 }
               },
+              "rack": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "rackId"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "Rack",
+                  "namespace": "public"
+                }
+              },
+              "user": {
+                "cardinality": "N:1",
+                "nullable": true,
+                "on": {
+                  "localFields": [
+                    "performedBy"
+                  ],
+                  "targetFields": [
+                    "id"
+                  ]
+                },
+                "to": {
+                  "model": "User",
+                  "namespace": "public"
+                }
+              },
               "warehouse": {
                 "cardinality": "N:1",
                 "nullable": false,
@@ -863,11 +988,23 @@
                 "id": {
                   "column": "id"
                 },
+                "notes": {
+                  "column": "notes"
+                },
+                "performedBy": {
+                  "column": "performedBy"
+                },
                 "productId": {
                   "column": "productId"
                 },
                 "quantity": {
                   "column": "quantity"
+                },
+                "rackId": {
+                  "column": "rackId"
+                },
+                "referenceNumber": {
+                  "column": "referenceNumber"
                 },
                 "type": {
                   "column": "type"
@@ -1036,7 +1173,23 @@
                 }
               }
             },
-            "relations": {},
+            "relations": {
+              "stockMoves": {
+                "cardinality": "1:N",
+                "on": {
+                  "localFields": [
+                    "id"
+                  ],
+                  "targetFields": [
+                    "performedBy"
+                  ]
+                },
+                "to": {
+                  "model": "StockMovement",
+                  "namespace": "public"
+                }
+              }
+            },
             "storage": {
               "fields": {
                 "createdAt": {
@@ -1573,9 +1726,19 @@
             },
             "product": {
               "columns": {
+                "barcode": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "categoryId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
+                  "nullable": true
+                },
+                "costPrice": {
+                  "codecId": "pg/numeric@1",
+                  "nativeType": "numeric",
                   "nullable": true
                 },
                 "createdAt": {
@@ -1601,6 +1764,11 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "imageUrl": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
                 "name": {
                   "codecId": "pg/text@1",
                   "nativeType": "text",
@@ -1609,6 +1777,24 @@
                 "price": {
                   "codecId": "pg/numeric@1",
                   "nativeType": "numeric",
+                  "nullable": false
+                },
+                "reorderLevel": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 10
+                  },
+                  "nativeType": "int4",
+                  "nullable": false
+                },
+                "safetyStock": {
+                  "codecId": "pg/int4@1",
+                  "default": {
+                    "kind": "literal",
+                    "value": 5
+                  },
+                  "nativeType": "int4",
                   "nullable": false
                 },
                 "sku": {
@@ -1688,6 +1874,11 @@
                 {
                   "columns": [
                     "sku"
+                  ]
+                },
+                {
+                  "columns": [
+                    "barcode"
                   ]
                 }
               ]
@@ -1783,6 +1974,16 @@
                   "nativeType": "int4",
                   "nullable": false
                 },
+                "notes": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
+                },
+                "performedBy": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
                 "productId": {
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
@@ -1792,6 +1993,16 @@
                   "codecId": "pg/int4@1",
                   "nativeType": "int4",
                   "nullable": false
+                },
+                "rackId": {
+                  "codecId": "pg/int4@1",
+                  "nativeType": "int4",
+                  "nullable": true
+                },
+                "referenceNumber": {
+                  "codecId": "pg/text@1",
+                  "nativeType": "text",
+                  "nullable": true
                 },
                 "type": {
                   "codecId": "pg/text@1",
@@ -1836,15 +2047,63 @@
                     "namespaceId": "public",
                     "tableName": "warehouse"
                   }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "rackId"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "stockMovement"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "rack"
+                  }
+                },
+                {
+                  "source": {
+                    "columns": [
+                      "performedBy"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "stockMovement"
+                  },
+                  "target": {
+                    "columns": [
+                      "id"
+                    ],
+                    "namespaceId": "public",
+                    "tableName": "user"
+                  }
                 }
               ],
               "indexes": [
+                {
+                  "columns": [
+                    "performedBy"
+                  ],
+                  "name": "stockMovement_performedBy_idx_bcb36e41",
+                  "prefix": "stockMovement_performedBy_idx",
+                  "unique": false
+                },
                 {
                   "columns": [
                     "productId"
                   ],
                   "name": "stockMovement_productId_idx_5858600a",
                   "prefix": "stockMovement_productId_idx",
+                  "unique": false
+                },
+                {
+                  "columns": [
+                    "rackId"
+                  ],
+                  "name": "stockMovement_rackId_idx_0efac708",
+                  "prefix": "stockMovement_rackId_idx",
                   "unique": false
                 },
                 {
@@ -2039,7 +2298,7 @@
         "kind": "postgres-schema"
       }
     },
-    "storageHash": "838bc6dd08cc4320eb974de170258aac93dce2dcedf0d8b7f03edab172198787"
+    "storageHash": "c2e83454cb89045c22ee74db8df0fcacfa279fc8bd433e128efa353448a3ddb1"
   },
   "execution": {
     "executionHash": "182d4d09c1d4832fc2705964ec3e73504482de219a2fd8f2538be193eaa1adb6",

@@ -1,18 +1,47 @@
+import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { getStockMovements } from '../services/api';
 
 export default function StockMovements() {
-  const movements = getStockMovements();
+  const [movements, setMovements] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    const loadMovements = async () => {
+      try {
+        setLoading(true);
+        const response = await getStockMovements();
+        setMovements(response || []);
+        setError('');
+      } catch (requestError) {
+        setError(requestError.message || 'Unable to load stock movements.');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMovements();
+  }, []);
 
   const getTypeStyle = (type) => {
     const styles = {
-      STOCK_IN: { bg: '#d1fae5', color: '#065f46', icon: '📥' },
-      STOCK_OUT: { bg: '#fee2e2', color: '#991b1b', icon: '📤' },
-      TRANSFER: { bg: '#e0e7ff', color: '#3730a3', icon: '🔄' },
-      ADJUSTMENT: { bg: '#fef3c7', color: '#92400e', icon: '⚖️' }
+      IN: { bg: '#d1fae5', color: '#065f46', icon: '📥' },
+      OUT: { bg: '#fee2e2', color: '#991b1b', icon: '📤' },
+      TRANSFER_OUT: { bg: '#e0e7ff', color: '#3730a3', icon: '↔️' },
+      TRANSFER_IN: { bg: '#dbeafe', color: '#1d4ed8', icon: '🔄' },
+      ADJUSTMENT: { bg: '#fef3c7', color: '#92400e', icon: '⚖️' },
     };
-    return styles[type] || styles.ADJUSTMENT;
+    return styles[type] || { bg: '#f3f4f6', color: '#374151', icon: '•' };
   };
+
+  if (loading) {
+    return <div className="card"><div className="empty-state"><div className="empty-state-title">Loading stock movements…</div></div></div>;
+  }
+
+  if (error) {
+    return <div className="card"><div className="empty-state"><div className="empty-state-title">Unable to load stock movements.</div><div className="empty-state-description">{error}</div></div></div>;
+  }
 
   return (
     <div>
@@ -29,57 +58,33 @@ export default function StockMovements() {
         <table className="data-table">
           <thead>
             <tr>
-              <th>Date & Time</th>
-              <th>Product</th>
               <th>Type</th>
               <th>Quantity</th>
               <th>Warehouse</th>
-              <th>Rack</th>
-              <th>User</th>
+              <th>Notes</th>
               <th>Reference</th>
             </tr>
           </thead>
           <tbody>
-            {movements.map(movement => {
+            {movements.length ? movements.map((movement) => {
               const style = getTypeStyle(movement.type);
               return (
                 <tr key={movement.id}>
-                  <td style={{ fontSize: '13px' }}>{movement.date}</td>
                   <td>
-                    <Link to={`/products/${movement.productId}`} className="link">
-                      <strong>{movement.productName}</strong>
-                    </Link>
-                  </td>
-                  <td>
-                    <span style={{
-                      padding: '4px 10px',
-                      borderRadius: '6px',
-                      fontSize: '12px',
-                      fontWeight: '600',
-                      backgroundColor: style.bg,
-                      color: style.color,
-                      display: 'inline-flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}>
+                    <span style={{ padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: '600', backgroundColor: style.bg, color: style.color, display: 'inline-flex', alignItems: 'center', gap: '4px' }}>
                       <span>{style.icon}</span>
-                      {movement.type.replace('_', ' ')}
+                      {movement.type}
                     </span>
                   </td>
-                  <td>
-                    <strong style={{ 
-                      color: movement.type === 'STOCK_OUT' || movement.quantity < 0 ? '#ef4444' : '#10b981' 
-                    }}>
-                      {movement.quantity > 0 ? '+' : ''}{movement.quantity}
-                    </strong> units
-                  </td>
-                  <td>{movement.warehouseName}</td>
-                  <td>{movement.rackNumber}</td>
-                  <td style={{ fontSize: '13px' }}>{movement.user}</td>
-                  <td><code style={{ fontSize: '12px', color: '#6b7280' }}>{movement.reference}</code></td>
+                  <td><strong style={{ color: movement.type === 'OUT' || movement.type === 'TRANSFER_OUT' ? '#ef4444' : '#10b981' }}>{movement.quantity}</strong> units</td>
+                  <td>{movement.warehouseId || '—'}</td>
+                  <td>{movement.notes || '—'}</td>
+                  <td>{movement.referenceNumber || '—'}</td>
                 </tr>
               );
-            })}
+            }) : (
+              <tr><td colSpan="5" className="empty-state">No stock movements found.</td></tr>
+            )}
           </tbody>
         </table>
       </div>

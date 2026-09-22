@@ -183,19 +183,26 @@
   color: var(--gray-400);
 }
 
-.demo-badge {
+.logout-button {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: var(--space-2) var(--space-3);
-  background: linear-gradient(135deg, rgba(251, 191, 36, 0.2), rgba(245, 158, 11, 0.2));
-  border-radius: var(--radius-md);
-  font-size: var(--text-xs);
-  color: #fbbf24;
   gap: var(--space-2);
+  width: 100%;
   margin-top: var(--space-3);
-  border: 1px solid rgba(251, 191, 36, 0.3);
+  padding: var(--space-3);
+  border: 1px solid rgba(255, 255, 255, 0.12);
+  border-radius: var(--radius-md);
+  background: rgba(239, 68, 68, 0.08);
+  color: #fecaca;
+  font-size: var(--text-sm);
   font-weight: var(--font-medium);
+  cursor: pointer;
+  transition: all var(--transition-base);
+}
+
+.logout-button:hover {
+  background: rgba(239, 68, 68, 0.16);
 }
 
 @media (max-width: 1024px) {

@@ -130,10 +130,115 @@
   padding: var(--space-2) var(--space-3);
   border-radius: var(--radius-md);
   transition: background-color var(--transition-base);
+  background: transparent;
+  border: none;
+  text-align: left;
 }
 
 .user-profile:hover {
   background-color: var(--bg-tertiary);
+}
+
+.notification-dropdown-wrapper {
+  position: relative;
+}
+
+.notification-dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 12px);
+  width: 320px;
+  background: var(--bg-primary);
+  border: 1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+  z-index: 100;
+}
+
+.notification-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-3) var(--space-4);
+  border-bottom: 1px solid var(--border-primary);
+  font-size: var(--text-sm);
+}
+
+.link-button {
+  background: transparent;
+  border: none;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-size: var(--text-xs);
+}
+
+.notification-list {
+  display: flex;
+  flex-direction: column;
+  max-height: 320px;
+  overflow-y: auto;
+}
+
+.notification-item {
+  border: none;
+  background: transparent;
+  border-bottom: 1px solid var(--border-primary);
+  text-align: left;
+  padding: var(--space-3) var(--space-4);
+  cursor: pointer;
+  color: var(--text-primary);
+}
+
+.notification-item.unread {
+  background: rgba(99, 102, 241, 0.04);
+}
+
+.notification-title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-1);
+}
+
+.notification-type {
+  font-size: var(--text-xs);
+  font-weight: var(--font-semibold);
+  color: var(--color-primary);
+  text-transform: uppercase;
+}
+
+.notification-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-danger);
+}
+
+.notification-message {
+  font-size: var(--text-sm);
+  margin-bottom: var(--space-1);
+}
+
+.notification-meta {
+  font-size: var(--text-xs);
+  color: var(--text-tertiary);
+}
+
+.notification-empty {
+  padding: var(--space-4);
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+.notification-view-all {
+  width: 100%;
+  border: none;
+  background: var(--gray-50);
+  color: var(--text-primary);
+  padding: var(--space-3);
+  cursor: pointer;
+  font-weight: var(--font-medium);
 }
 
 .user-avatar {

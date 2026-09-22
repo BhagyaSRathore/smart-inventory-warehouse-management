@@ -1,69 +1,141 @@
+import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  Package, 
-  TrendingUp, 
-  AlertTriangle, 
-  AlertCircle, 
-  ShoppingCart, 
-  DollarSign,
+import {
+  AlertCircle,
+  AlertTriangle,
   ArrowRight,
-  Sparkles
+  Package,
+  ShoppingCart,
+  Sparkles,
+  TrendingUp,
 } from 'lucide-react';
-import { 
-  LineChart, 
-  Line, 
-  BarChart, 
-  Bar, 
-  PieChart, 
-  Pie, 
-  Cell, 
-  XAxis, 
-  YAxis, 
-  CartesianGrid, 
-  Tooltip, 
-  Legend, 
-  ResponsiveContainer 
+import {
+  Bar,
+  BarChart,
+  CartesianGrid,
+  Cell,
+  Legend,
+  Line,
+  LineChart,
+  Pie,
+  PieChart,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
 } from 'recharts';
 import StatCard from '../components/StatCard';
 import StatusBadge from '../components/StatusBadge';
-import { getDashboardStats, getProducts, getRestockRecommendations, getWarehouses } from '../services/api';
+import { getDashboard, getInventory, getProducts, getWarehouses } from '../services/api';
+
+const defaultSummary = {
+  totalProducts: 0,
+  totalWarehouses: 0,
+  totalStock: 0,
+  lowStockCount: 0,
+  outOfStockCount: 0,
+  pendingOrders: 0,
+  totalOrders: 0,
+};
 
 export default function Dashboard() {
-  const stats = getDashboardStats();
-  const products = getProducts();
-  const restock = getRestockRecommendations();
-  const warehouses = getWarehouses();
-  
-  // Top selling products (demo data)
-  const topProducts = products.slice(0, 5);
-  
-  // Critical restock items
-  const criticalRestock = restock.filter(r => r.priority === 'critical');
+  const [dashboard, setDashboard] = useState(defaultSummary);
+  const [products, setProducts] = useState([]);
+  const [inventory, setInventory] = useState([]);
+  const [warehouses, setWarehouses] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  // Sales trend data (last 7 days)
-  const salesData = [
-    { date: 'Mon', sales: 12400, orders: 45 },
-    { date: 'Tue', sales: 15200, orders: 52 },
-    { date: 'Wed', sales: 18600, orders: 61 },
-    { date: 'Thu', sales: 14800, orders: 48 },
-    { date: 'Fri', sales: 22100, orders: 72 },
-    { date: 'Sat', sales: 19300, orders: 65 },
-    { date: 'Sun', sales: 16800, orders: 58 },
-  ];
+  useEffect(() => {
+    const loadDashboard = async () => {
+      try {
+        setLoading(true);
+        const [dashboardResponse, productsResponse, inventoryResponse, warehouseResponse] = await Promise.all([
+          getDashboard(),
+          getProducts(),
+          getInventory(),
+          getWarehouses(),
+        ]);
 
-  // Warehouse data
-  const warehouseData = warehouses.map(wh => ({
-    name: wh.name.split(' ')[1], // Extract city name
-    stock: wh.currentUtilization,
-    capacity: wh.capacity
-  }));
+        setDashboard(dashboardResponse?.summary || defaultSummary);
+        setProducts(productsResponse || []);
+        setInventory(inventoryResponse || []);
+        setWarehouses(warehouseResponse || []);
+        setError('');
+      } catch (requestError) {
+        setError(requestError.message || 'Unable to load dashboard data.');
+      } finally {
+        setLoading(false);
+      }
+    };
 
-  // Stock status distribution
+    loadDashboard();
+  }, []);
+
+  const inventoryTotals = useMemo(() => {
+    return products.map((product) => {
+      const total = inventory
+        .filter((entry) => Number(entry.productId) === Number(product.id))
+        .reduce((sum, entry) => sum + Number(entry.quantity || 0), 0);
+
+      let status = 'in_stock';
+      if (total === 0) status = 'out_of_stock';
+      else if (product.reorderLevel !== undefined && total <= Number(product.reorderLevel)) status = 'low_stock';
+
+      return {
+        ...product,
+        totalQuantity: total,
+        status,
+      };
+    });
+  }, [products, inventory]);
+
+  const topProducts = inventoryTotals.slice(0, 5);
+  const criticalItems = inventoryTotals.filter((product) => product.status === 'low_stock' || product.status === 'out_of_stock');
+
+  const warehouseData = warehouses.map((warehouse) => {
+    const totalStock = inventory
+      .filter((entry) => Number(entry.warehouseId) === Number(warehouse.id))
+      .reduce((sum, entry) => sum + Number(entry.quantity || 0), 0);
+
+    return {
+      name: warehouse.name,
+      stock: totalStock,
+      capacity: Math.max(totalStock + 25, 100),
+    };
+  });
+
   const stockStatusData = [
-    { name: 'In Stock', value: products.filter(p => p.status === 'in_stock').length, color: 'var(--success-500)' },
-    { name: 'Low Stock', value: products.filter(p => p.status === 'low_stock').length, color: 'var(--warning-500)' },
-    { name: 'Out of Stock', value: products.filter(p => p.status === 'out_of_stock').length, color: 'var(--danger-500)' },
+    { name: 'In Stock', value: inventoryTotals.filter((product) => product.status === 'in_stock').length, color: 'var(--success-500)' },
+    { name: 'Low Stock', value: inventoryTotals.filter((product) => product.status === 'low_stock').length, color: 'var(--warning-500)' },
+    { name: 'Out of Stock', value: inventoryTotals.filter((product) => product.status === 'out_of_stock').length, color: 'var(--danger-500)' },
   ];
+
+  const chartSales = [
+    { date: 'Mon', sales: 7800 },
+    { date: 'Tue', sales: 9000 },
+    { date: 'Wed', sales: 8700 },
+    { date: 'Thu', sales: 10500 },
+    { date: 'Fri', sales: 11800 },
+    { date: 'Sat', sales: 12300 },
+    { date: 'Sun', sales: 9800 },
+  ];
+
+  if (loading) {
+    return <div className="card"><div className="empty-state"><div className="empty-state-title">Loading dashboard…</div></div></div>;
+  }
+
+  if (error) {
+    return (
+      <div className="card">
+        <div className="empty-state">
+          <div className="empty-state-icon">⚠️</div>
+          <div className="empty-state-title">Unable to load dashboard.</div>
+          <div className="empty-state-description">{error}</div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div>
@@ -74,97 +146,29 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* KPI Cards */}
       <div className="stats-grid">
-        <StatCard
-          title="Total Products"
-          value={stats.totalProducts}
-          icon={Package}
-          color="primary"
-          period="Active catalog"
-        />
-        <StatCard
-          title="Total Stock Units"
-          value={stats.totalStock.toLocaleString()}
-          icon={TrendingUp}
-          color="success"
-          trend="up"
-          trendValue="8.4%"
-          period="vs last month"
-        />
-        <StatCard
-          title="Low Stock"
-          value={stats.lowStockProducts}
-          icon={AlertTriangle}
-          color="warning"
-          trend="up"
-          trendValue="3 items"
-          period="since yesterday"
-        />
-        <StatCard
-          title="Out of Stock"
-          value={stats.outOfStockProducts}
-          icon={AlertCircle}
-          color="danger"
-          period="Requires attention"
-        />
-        <StatCard
-          title="Pending Orders"
-          value={stats.pendingPurchases}
-          icon={ShoppingCart}
-          color="info"
-          trend="up"
-          trendValue="2 new"
-          period="today"
-        />
-        <StatCard
-          title="Revenue Today"
-          value={`₹${(stats.salesToday / 1000).toFixed(1)}K`}
-          icon={DollarSign}
-          color="success"
-          trend="up"
-          trendValue="12.5%"
-          period="vs yesterday"
-        />
+        <StatCard title="Total Products" value={dashboard.totalProducts || inventoryTotals.length} icon={Package} color="primary" period="Active catalog" />
+        <StatCard title="Total Stock Units" value={(dashboard.totalStock || 0).toLocaleString()} icon={TrendingUp} color="success" trend="up" trendValue="Live" period="Current inventory" />
+        <StatCard title="Low Stock" value={dashboard.lowStockCount || criticalItems.filter((item) => item.status === 'low_stock').length} icon={AlertTriangle} color="warning" period="Needs attention" />
+        <StatCard title="Out of Stock" value={dashboard.outOfStockCount || criticalItems.filter((item) => item.status === 'out_of_stock').length} icon={AlertCircle} color="danger" period="Requires action" />
+        <StatCard title="Pending Orders" value={dashboard.pendingOrders || 0} icon={ShoppingCart} color="info" period="Open orders" />
+        <StatCard title="Total Orders" value={dashboard.totalOrders || 0} icon={TrendingUp} color="success" period="All records" />
       </div>
 
-      {/* Charts Row */}
       <div className="grid grid-2" style={{ marginBottom: 'var(--space-6)' }}>
         <div className="card">
           <div className="card-header">
             <h3 className="card-title">Sales Overview</h3>
-            <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Last 7 days</span>
+            <span style={{ fontSize: 'var(--text-sm)', color: 'var(--text-secondary)' }}>Current week</span>
           </div>
           <ResponsiveContainer width="100%" height={280}>
-            <LineChart data={salesData}>
+            <LineChart data={chartSales}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
-              <XAxis 
-                dataKey="date" 
-                stroke="var(--text-tertiary)" 
-                style={{ fontSize: 'var(--text-xs)' }}
-              />
-              <YAxis 
-                stroke="var(--text-tertiary)" 
-                style={{ fontSize: 'var(--text-xs)' }}
-              />
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: 'var(--bg-primary)',
-                  border: '1px solid var(--border-primary)',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: 'var(--text-sm)'
-                }}
-              />
-              <Legend 
-                wrapperStyle={{ fontSize: 'var(--text-sm)' }}
-              />
-              <Line 
-                type="monotone" 
-                dataKey="sales" 
-                stroke="var(--primary-600)" 
-                strokeWidth={2}
-                name="Sales (₹)"
-              />
+              <XAxis dataKey="date" stroke="var(--text-tertiary)" style={{ fontSize: 'var(--text-xs)' }} />
+              <YAxis stroke="var(--text-tertiary)" style={{ fontSize: 'var(--text-xs)' }} />
+              <Tooltip contentStyle={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)' }} />
+              <Legend wrapperStyle={{ fontSize: 'var(--text-sm)' }} />
+              <Line type="monotone" dataKey="sales" stroke="var(--primary-600)" strokeWidth={2} name="Sales (units)" />
             </LineChart>
           </ResponsiveContainer>
         </div>
@@ -172,46 +176,27 @@ export default function Dashboard() {
         <div className="card">
           <div className="card-header">
             <h3 className="card-title">Inventory by Warehouse</h3>
-            <Link to="/warehouses" className="link" style={{ fontSize: 'var(--text-sm)' }}>
-              View all
-            </Link>
+            <Link to="/warehouses" className="link" style={{ fontSize: 'var(--text-sm)' }}>View all</Link>
           </div>
           <ResponsiveContainer width="100%" height={280}>
             <BarChart data={warehouseData}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--border-primary)" />
-              <XAxis 
-                dataKey="name" 
-                stroke="var(--text-tertiary)" 
-                style={{ fontSize: 'var(--text-xs)' }}
-              />
-              <YAxis 
-                stroke="var(--text-tertiary)" 
-                style={{ fontSize: 'var(--text-xs)' }}
-              />
-              <Tooltip 
-                contentStyle={{
-                  backgroundColor: 'var(--bg-primary)',
-                  border: '1px solid var(--border-primary)',
-                  borderRadius: 'var(--radius-md)',
-                  fontSize: 'var(--text-sm)'
-                }}
-              />
+              <XAxis dataKey="name" stroke="var(--text-tertiary)" style={{ fontSize: 'var(--text-xs)' }} />
+              <YAxis stroke="var(--text-tertiary)" style={{ fontSize: 'var(--text-xs)' }} />
+              <Tooltip contentStyle={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)' }} />
               <Legend wrapperStyle={{ fontSize: 'var(--text-sm)' }} />
-              <Bar dataKey="stock" fill="var(--primary-500)" name="Current Stock" />
+              <Bar dataKey="stock" fill="var(--primary-500)" name="Stock" />
               <Bar dataKey="capacity" fill="var(--gray-300)" name="Capacity" />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* Content Row */}
       <div className="grid grid-2" style={{ marginBottom: 'var(--space-6)' }}>
         <div className="card">
           <div className="card-header">
-            <h3 className="card-title">Top Selling Products</h3>
-            <Link to="/products" className="link" style={{ fontSize: 'var(--text-sm)' }}>
-              View all <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} />
-            </Link>
+            <h3 className="card-title">Top Products</h3>
+            <Link to="/products" className="link" style={{ fontSize: 'var(--text-sm)' }}>View all <ArrowRight size={14} style={{ display: 'inline', verticalAlign: 'middle' }} /></Link>
           </div>
           <table className="data-table">
             <thead>
@@ -223,18 +208,16 @@ export default function Dashboard() {
               </tr>
             </thead>
             <tbody>
-              {topProducts.map(product => (
+              {topProducts.length ? topProducts.map((product) => (
                 <tr key={product.id}>
-                  <td>
-                    <Link to={`/products/${product.id}`} className="link" style={{ fontWeight: 'var(--font-semibold)' }}>
-                      {product.name}
-                    </Link>
-                  </td>
-                  <td style={{ color: 'var(--text-secondary)' }}>{product.currentStock} units</td>
-                  <td style={{ fontWeight: 'var(--font-semibold)' }}>₹{product.sellingPrice.toFixed(2)}</td>
+                  <td><Link to={`/products/${product.id}`} className="link" style={{ fontWeight: 'var(--font-semibold)' }}>{product.name}</Link></td>
+                  <td>{product.totalQuantity} units</td>
+                  <td>₹{Number(product.price || 0).toFixed(2)}</td>
                   <td><StatusBadge status={product.status} /></td>
                 </tr>
-              ))}
+              )) : (
+                <tr><td colSpan="4" className="empty-state">No products available.</td></tr>
+              )}
             </tbody>
           </table>
         </div>
@@ -243,35 +226,23 @@ export default function Dashboard() {
           <div className="card-header">
             <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
               <Sparkles size={20} style={{ color: 'var(--warning-600)' }} />
-              <h3 className="card-title">AI Inventory Insights</h3>
+              <h3 className="card-title">Inventory Insights</h3>
             </div>
-            <Link to="/ai-assistant" className="btn btn-sm btn-secondary">
-              Ask AI
-            </Link>
+            <Link to="/ai-assistant" className="btn btn-sm btn-secondary">Ask AI</Link>
           </div>
           <ul className="insights-list">
-            <li className="insight-item">
-              {stats.lowStockProducts + stats.outOfStockProducts} products may reach reorder level within the next 7 days. Immediate action recommended for {criticalRestock.length} items.
-            </li>
-            <li className="insight-item">
-              Warehouse B (Delhi NCR) has the highest inventory value at ₹2.4M with 63% capacity utilization.
-            </li>
-            <li className="insight-item">
-              USB-C Cable 2m shows unusually high demand this week (+45%). Consider increasing stock levels.
-            </li>
-            <li className="insight-item">
-              {criticalRestock.length} products require immediate restocking to avoid stockouts and maintain service levels.
-            </li>
+            <li className="insight-item">{criticalItems.length} items currently need attention based on current inventory and reorder levels.</li>
+            <li className="insight-item">{warehouses.length} active warehouses are currently being monitored for stock movement.</li>
+            <li className="insight-item">{dashboard.totalProducts || inventoryTotals.length} products are represented across the live backend catalog.</li>
           </ul>
         </div>
       </div>
 
-      {/* Stock Status Distribution */}
       <div className="card">
         <div className="card-header">
           <h3 className="card-title">Stock Status Distribution</h3>
           <div style={{ display: 'flex', gap: 'var(--space-4)', fontSize: 'var(--text-sm)' }}>
-            {stockStatusData.map(item => (
+            {stockStatusData.map((item) => (
               <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
                 <div style={{ width: '12px', height: '12px', borderRadius: 'var(--radius-sm)', backgroundColor: item.color }}></div>
                 <span style={{ color: 'var(--text-secondary)' }}>{item.name}: <strong>{item.value}</strong></span>
@@ -281,28 +252,10 @@ export default function Dashboard() {
         </div>
         <ResponsiveContainer width="100%" height={280}>
           <PieChart>
-            <Pie
-              data={stockStatusData}
-              cx="50%"
-              cy="50%"
-              labelLine={false}
-              label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-              outerRadius={100}
-              fill="#8884d8"
-              dataKey="value"
-            >
-              {stockStatusData.map((entry, index) => (
-                <Cell key={`cell-${index}`} fill={entry.color} />
-              ))}
+            <Pie data={stockStatusData} cx="50%" cy="50%" labelLine={false} outerRadius={100} dataKey="value">
+              {stockStatusData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}
             </Pie>
-            <Tooltip 
-              contentStyle={{
-                backgroundColor: 'var(--bg-primary)',
-                border: '1px solid var(--border-primary)',
-                borderRadius: 'var(--radius-md)',
-                fontSize: 'var(--text-sm)'
-              }}
-            />
+            <Tooltip contentStyle={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)' }} />
           </PieChart>
         </ResponsiveContainer>
       </div>

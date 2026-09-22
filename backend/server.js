@@ -14,6 +14,7 @@ import stockRoutes from "./src/routes/stock.routes.js";
 import orderRoutes from "./src/routes/order.routes.js";
 import dashboardRoutes from "./src/routes/dashboard.routes.js";
 import { db } from "./src/db.ts";
+import notificationRoutes from "./src/routes/notification.routes.js";
 
 const app = express();
 app.use(cors());
@@ -30,6 +31,7 @@ app.use("/api/inventory", inventoryRoutes);
 app.use("/api/stock-movements", stockRoutes);
 app.use("/api/orders", orderRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 app.get("/", (req, res) => {
   res.json({
