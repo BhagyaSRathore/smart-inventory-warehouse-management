@@ -1,8 +1,22 @@
 import { db } from "../db.ts";
 
+const getVisibleNotifications = async (userId) => {
+  const notifications = await db.orm.public.Notification.all();
+  const numericUserId = Number(userId);
+
+  return notifications.filter((notification) => {
+    if (notification.userId == null) {
+      return true;
+    }
+
+    return Number(notification.userId) === numericUserId;
+  });
+};
+
 export const getNotifications = async (req, res) => {
   try {
-    const notifications = await db.orm.public.Notification.all();
+    const userId = req.user?.userId;
+    const notifications = await getVisibleNotifications(userId);
 
     res.json({
       message: "Notifications fetched successfully",
@@ -16,7 +30,8 @@ export const getNotifications = async (req, res) => {
 
 export const getUnreadNotificationCount = async (req, res) => {
   try {
-    const notifications = await db.orm.public.Notification.all();
+    const userId = req.user?.userId;
+    const notifications = await getVisibleNotifications(userId);
     const unreadCount = notifications.filter((notification) => !notification.read).length;
 
     res.json({ count: unreadCount });
@@ -29,10 +44,16 @@ export const getUnreadNotificationCount = async (req, res) => {
 export const markNotificationAsRead = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.userId;
     const notification = await db.orm.public.Notification.first({ id: Number(id) });
 
     if (!notification) {
       return res.status(404).json({ message: "Notification not found" });
+    }
+
+    const isVisible = notification.userId == null || Number(notification.userId) === Number(userId);
+    if (!isVisible) {
+      return res.status(403).json({ message: "You cannot access this notification" });
     }
 
     const updated = await db.orm.public.Notification.where({ id: Number(id) }).update({ read: true });
@@ -49,7 +70,8 @@ export const markNotificationAsRead = async (req, res) => {
 
 export const markAllNotificationsAsRead = async (req, res) => {
   try {
-    const notifications = await db.orm.public.Notification.all();
+    const userId = req.user?.userId;
+    const notifications = await getVisibleNotifications(userId);
 
     await Promise.all(
       notifications.filter((notification) => !notification.read).map((notification) =>
@@ -67,10 +89,16 @@ export const markAllNotificationsAsRead = async (req, res) => {
 export const deleteNotification = async (req, res) => {
   try {
     const { id } = req.params;
+    const userId = req.user?.userId;
     const existing = await db.orm.public.Notification.first({ id: Number(id) });
 
     if (!existing) {
       return res.status(404).json({ message: "Notification not found" });
+    }
+
+    const isVisible = existing.userId == null || Number(existing.userId) === Number(userId);
+    if (!isVisible) {
+      return res.status(403).json({ message: "You cannot delete this notification" });
     }
 
     await db.orm.public.Notification.where({ id: Number(id) }).delete();

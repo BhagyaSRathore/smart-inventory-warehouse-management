@@ -1,4 +1,5 @@
 import { db } from "../db.ts";
+import { notifyInventoryThreshold } from "../services/notificationService.js";
 
 export const createInventory = async (req, res) => {
   try {
@@ -114,6 +115,7 @@ export const stockIn = async (req, res) => {
     }
     
     // Execute transaction
+    let finalInventoryQuantity = quantity;
     await db.transaction(async (tx) => {
       // Find existing inventory
       const existingInventory = await tx.orm.public.Inventory.first({
@@ -123,19 +125,21 @@ export const stockIn = async (req, res) => {
       });
       
       if (existingInventory) {
+        finalInventoryQuantity = existingInventory.quantity + Number(quantity);
         // Update existing inventory
         await tx.orm.public.Inventory
           .where({ id: existingInventory.id })
           .update({
-            quantity: existingInventory.quantity + Number(quantity),
+            quantity: finalInventoryQuantity,
           });
       } else {
+        finalInventoryQuantity = Number(quantity);
         // Create new inventory record
         await tx.orm.public.Inventory.create({
           productId: Number(productId),
           warehouseId: Number(warehouseId),
           rackId: rackId ? Number(rackId) : null,
-          quantity: Number(quantity),
+          quantity: finalInventoryQuantity,
         });
       }
       
@@ -150,6 +154,12 @@ export const stockIn = async (req, res) => {
         notes: notes || null,
         performedBy: req.user?.userId || null,
       });
+    });
+
+    await notifyInventoryThreshold({
+      productId,
+      warehouseId,
+      quantity: finalInventoryQuantity,
     });
     
     res.status(200).json({
@@ -227,13 +237,15 @@ export const stockOut = async (req, res) => {
       });
     }
     
+    const remainingQuantity = inventory.quantity - Number(quantity);
+
     // Execute transaction
     await db.transaction(async (tx) => {
       // Decrease inventory
       await tx.orm.public.Inventory
         .where({ id: inventory.id })
         .update({
-          quantity: inventory.quantity - Number(quantity),
+          quantity: remainingQuantity,
         });
       
       // Create stock movement record
@@ -247,6 +259,12 @@ export const stockOut = async (req, res) => {
         notes: notes || null,
         performedBy: req.user?.userId || null,
       });
+    });
+
+    await notifyInventoryThreshold({
+      productId,
+      warehouseId,
+      quantity: remainingQuantity,
     });
     
     res.status(200).json({

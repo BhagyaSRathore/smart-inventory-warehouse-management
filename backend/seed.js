@@ -5,13 +5,36 @@ import bcrypt from "bcrypt";
 await db.connect({ url: process.env.DATABASE_URL });
 
 async function ensureUser() {
-  const existing = await db.orm.public.User.first({ email: "admin@inventory.com" });
-  if (existing) {
+  const passwordHash = await bcrypt.hash("admin123", 10);
+
+  const existingByEmail = await db.orm.public.User.first({ email: "admin@inventory.com" });
+  if (existingByEmail) {
+    if (existingByEmail.username !== "admin" || existingByEmail.role !== "admin") {
+      await db.orm.public.User.where({ id: existingByEmail.id }).update({
+        username: "admin",
+        name: "System Admin",
+        role: "admin",
+        passwordHash,
+      });
+    }
+
     console.log("✅ Admin user already exists");
-    return existing;
+    return await db.orm.public.User.first({ id: existingByEmail.id });
   }
 
-  const passwordHash = await bcrypt.hash("admin123", 10);
+  const adminUser = await db.orm.public.User.first({ username: "admin" });
+  if (adminUser) {
+    await db.orm.public.User.where({ id: adminUser.id }).update({
+      email: "admin@inventory.com",
+      username: "admin",
+      name: "System Admin",
+      role: "admin",
+      passwordHash,
+    });
+    console.log("✅ Repaired admin user");
+    return await db.orm.public.User.first({ id: adminUser.id });
+  }
+
   const user = await db.orm.public.User.create({
     email: "admin@inventory.com",
     username: "admin",
@@ -374,22 +397,10 @@ async function seed() {
 
     // Create sample order
     console.log("Creating sample order...");
-    const order1 = await db.orm.public.Order.create({
-      orderNumber: "ORD-2024-001",
-      status: "pending",
-    });
+    const order1 = await ensureOrder("ORD-2024-001", "pending");
 
-    await db.orm.public.OrderItem.create({
-      orderId: order1.id,
-      productId: laptop.id,
-      quantity: 2,
-    });
-
-    await db.orm.public.OrderItem.create({
-      orderId: order1.id,
-      productId: mouse.id,
-      quantity: 5,
-    });
+    await ensureOrderItem(order1.id, laptop.id, 2);
+    await ensureOrderItem(order1.id, mouse.id, 5);
 
     console.log("✅ Created 1 order with 2 items");
 

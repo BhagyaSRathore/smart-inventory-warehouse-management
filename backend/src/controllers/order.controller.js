@@ -1,4 +1,5 @@
 import { db } from "../db.ts";
+import { notifyOrderCreated } from "../services/notificationService.js";
 
 export const createOrder = async (req, res) => {
   try {
@@ -37,6 +38,9 @@ export const createOrder = async (req, res) => {
         quantity: Number(item.quantity),
       });
     }
+
+    await notifyOrderCreated(orderNumber, items);
+
     res.status(201).json({
       message: "Order created successfully",
       order,
@@ -106,6 +110,12 @@ export const updateOrder = async (req, res) => {
         orderNumber,
         status,
       });
+
+    if (status) {
+      const { notifyOrderStatusChange } = await import("../services/notificationService.js");
+      await notifyOrderStatusChange(orderNumber || existingOrder.orderNumber, status);
+    }
+
     res.json({
       message: "Order updated successfully",
       order,
