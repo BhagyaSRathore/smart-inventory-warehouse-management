@@ -20,6 +20,7 @@ export const getCurrentUser = async (req, res) => {
         username: user.username,
         name: user.name,
         role: user.role,
+        phone: user.phone,
       },
     });
   } catch (error) {
@@ -30,7 +31,7 @@ export const getCurrentUser = async (req, res) => {
 
 export const updateCurrentUser = async (req, res) => {
   try {
-    const { name, username, email } = req.body;
+    const { name, username, email, phone } = req.body;
     const userId = Number(req.user.userId);
 
     const existingUser = await db.orm.public.User.first({ id: userId });
@@ -42,6 +43,7 @@ export const updateCurrentUser = async (req, res) => {
       name: name ?? existingUser.name,
       username: username ?? existingUser.username,
       email: email ?? existingUser.email,
+      phone: phone ?? existingUser.phone,
     });
 
     res.json({
@@ -52,6 +54,7 @@ export const updateCurrentUser = async (req, res) => {
         username: updatedUser.username,
         name: updatedUser.name,
         role: updatedUser.role,
+        phone: updatedUser.phone,
       },
     });
   } catch (error) {
@@ -99,7 +102,7 @@ export const changePassword = async (req, res) => {
 
 export const register = async (req, res) => {
   try {
-    const { email, username, name, password } = req.body;
+    const { email, username, name, phone, password } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -123,6 +126,7 @@ export const register = async (req, res) => {
   email,
   username,
   name,
+  phone,
   passwordHash,
 });
     res.status(201).json({
@@ -133,6 +137,7 @@ export const register = async (req, res) => {
         username: user.username,
         name: user.name,
         role: user.role,
+        phone: user.phone,
       },
     });
   } catch (error) {
@@ -195,13 +200,17 @@ export const login = async (req, res) => {
         username: user.username,
         name: user.name,
         role: user.role,
+        phone: user.phone,
       },
     });
-  } catch (error) {
-    console.error(error);
+ } catch (error) {
+  console.error("========== LOGIN ERROR ==========");
+  console.error(error);
+  console.error("=================================");
 
-    res.status(500).json({
-      message: "Login failed",
-    });
-  }
+  res.status(500).json({
+    message: "Login failed",
+    error: error.message,
+  });
+}
 };

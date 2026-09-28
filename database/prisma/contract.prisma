@@ -6,8 +6,10 @@ model User {
   username     String?
   passwordHash String
   name         String?
+  phone        String?
   role         String          @default("staff")
   stockMoves   StockMovement[]
+  notifications Notification[]
   createdAt    TimestamptzString @default(now())
   updatedAt    temporal.updatedAtString()
 }
@@ -131,4 +133,18 @@ model Prediction {
   quantity    Int
   confidence  Decimal?
   product     Product    @relation(fields: [productId], references: [id])
+}
+
+model Notification {
+  id        Int      @id @default(autoincrement())
+  userId    Int?
+  type      String   @default("SYSTEM_ALERT")
+  title     String
+  message   String
+  severity  String   @default("INFO")
+  read      Boolean  @default(false)
+  actionUrl String?
+  createdAt TimestamptzString @default(now())
+
+  user User? @relation(fields: [userId], references: [id])
 }
