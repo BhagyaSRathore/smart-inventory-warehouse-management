@@ -27,8 +27,8 @@ const getProductNameHint = (message) => {
 };
 
 const getMLIntent = (message) => {
-  const asksDemand = /\b(?:demand|predict(?:ed|ion)?|forecast)\b/i.test(message);
-  const asksRisk = /\b(?:risk|attention|below\s+(?:the\s+)?reorder|low\s+stock)\b/i.test(message);
+  const asksDemand = /\b(?:demand|predict(?:ed|ion)?|forecast|future)\b/i.test(message);
+  const asksRisk = /\b(?:risk|attention|below\s+(?:the\s+)?reorder|low\s+stock|run\s*out|out\s+of\s+stock|shortage)\b/i.test(message);
   const asksRestock = /\b(?:restock|replenish(?:ed|ment)?|replenishment)\b/i.test(message);
 
   if (!asksDemand && !asksRisk && !asksRestock) {
@@ -36,7 +36,7 @@ const getMLIntent = (message) => {
   }
 
   return {
-    asksDemand,
+    asksDemand: asksDemand || asksRisk,
     asksRisk,
     asksRestock,
   };
@@ -44,7 +44,10 @@ const getMLIntent = (message) => {
 
 const getPredictionDays = (message) => {
   const daysMatch = message.match(/\b(7|14|30)\s*[- ]?days?\b/i);
-  return daysMatch ? Number(daysMatch[1]) : 7;
+  if (daysMatch) return Number(daysMatch[1]);
+  if (/\b(?:next\s+week|this\s+week|week)\b/i.test(message)) return 7;
+  if (/\b(?:next\s+month|this\s+month|month)\b/i.test(message)) return 30;
+  return 7;
 };
 
 const getProductReference = (message, products) => {

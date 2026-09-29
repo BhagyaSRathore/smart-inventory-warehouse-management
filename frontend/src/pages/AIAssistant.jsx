@@ -1,16 +1,17 @@
-import { useState } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { askAI } from '../services/api';
 
 export default function AIAssistant() {
   const [messages, setMessages] = useState([
     {
       role: 'assistant',
-      content: 'Hello! I\'m your AI Inventory Assistant. I can help you with inventory insights, stock predictions, and recommendations. How can I assist you today?'
+      content: "Hello! I'm your AI Inventory Assistant. I can help you with inventory insights, stock predictions, and recommendations. How can I assist you today?"
     }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
+  const chatEndRef = useRef(null);
 
   const sampleQuestions = [
     'Which products are low in stock?',
@@ -19,6 +20,14 @@ export default function AIAssistant() {
     'Which products may run out next week?',
     'Why is product M101 high risk?'
   ];
+
+  const scrollToBottom = () => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages, isLoading]);
 
   const handleSendMessage = async (question) => {
     if (isLoading) return;
@@ -43,9 +52,7 @@ export default function AIAssistant() {
     } catch (requestError) {
       const responseMessage = requestError.status === 401
         ? 'Please sign in again to use the AI assistant.'
-        : requestError.status
-          ? requestError.message
-          : 'The backend is unavailable. Please try again.';
+        : requestError.data?.message || requestError.message || 'The AI assistant is temporarily unavailable. Please try again.';
 
       setMessages(prev => [...prev, { role: 'assistant', content: responseMessage }]);
     } finally {
@@ -78,7 +85,7 @@ export default function AIAssistant() {
               >
                 <div
                   style={{
-                    maxWidth: '80%',
+                    maxWidth: '85%',
                     padding: '12px 16px',
                     borderRadius: '12px',
                     backgroundColor: message.role === 'user' ? '#4f46e5' : 'white',
@@ -94,6 +101,29 @@ export default function AIAssistant() {
                 </div>
               </div>
             ))}
+
+            {isLoading && (
+              <div style={{ marginBottom: '16px', display: 'flex', justifyContent: 'flex-start' }}>
+                <div
+                  style={{
+                    maxWidth: '80%',
+                    padding: '12px 16px',
+                    borderRadius: '12px',
+                    backgroundColor: 'white',
+                    color: '#6b7280',
+                    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.1)',
+                    fontSize: '14px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
+                  }}
+                >
+                  <span>🤖</span>
+                  <span>AI is thinking & analyzing warehouse data...</span>
+                </div>
+              </div>
+            )}
+            <div ref={chatEndRef} />
           </div>
 
           {error && (
@@ -120,7 +150,7 @@ export default function AIAssistant() {
               }}
             />
             <button onClick={() => handleSendMessage()} className="btn btn-primary" disabled={isLoading}>
-              {isLoading ? 'Sending...' : 'Send'}
+              {isLoading ? 'Thinking...' : 'Send'}
             </button>
           </div>
         </div>
@@ -134,23 +164,27 @@ export default function AIAssistant() {
               <button
                 key={index}
                 onClick={() => handleSendMessage(question)}
+                disabled={isLoading}
                 style={{
                   padding: '14px 16px',
                   border: '1px solid #e5e7eb',
                   borderRadius: '8px',
                   backgroundColor: 'white',
                   textAlign: 'left',
-                  cursor: 'pointer',
+                  cursor: isLoading ? 'not-allowed' : 'pointer',
+                  opacity: isLoading ? 0.6 : 1,
                   transition: 'all 0.2s',
                   fontSize: '14px'
                 }}
                 onMouseOver={(e) => {
-                  e.target.style.backgroundColor = '#f9fafb';
-                  e.target.style.borderColor = '#4f46e5';
+                  if (!isLoading) {
+                    e.currentTarget.style.backgroundColor = '#f9fafb';
+                    e.currentTarget.style.borderColor = '#4f46e5';
+                  }
                 }}
                 onMouseOut={(e) => {
-                  e.target.style.backgroundColor = 'white';
-                  e.target.style.borderColor = '#e5e7eb';
+                  e.currentTarget.style.backgroundColor = 'white';
+                  e.currentTarget.style.borderColor = '#e5e7eb';
                 }}
               >
                 💬 {question}
@@ -158,12 +192,12 @@ export default function AIAssistant() {
             ))}
           </div>
 
-          <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#fef3c7', borderRadius: '8px', border: '1px solid #f59e0b' }}>
-              <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#78350f', marginBottom: '8px' }}>
-              ℹ️ Backend AI
+          <div style={{ marginTop: '24px', padding: '16px', backgroundColor: '#ecfdf5', borderRadius: '8px', border: '1px solid #a7f3d0' }}>
+            <h4 style={{ fontSize: '14px', fontWeight: '600', color: '#047857', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <span>✓</span> Connected Backend AI
             </h4>
-            <p style={{ fontSize: '13px', color: '#78350f', lineHeight: '1.6', margin: 0 }}>
-              Responses are powered by the authenticated backend AI service.
+            <p style={{ fontSize: '13px', color: '#065f46', lineHeight: '1.6', margin: 0 }}>
+              Responses are powered by live warehouse inventory data and the Google Gemini & Gemma intelligence engine.
             </p>
           </div>
         </div>

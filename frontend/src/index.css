@@ -796,3 +796,561 @@ body {
     width: 100%;
   }
 }
+
+/* =========================================
+   SETTINGS PAGE
+========================================= */
+
+.settings-page {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  padding: 0;
+  overflow-x: hidden;
+}
+
+.settings-page *,
+.settings-page *::before,
+.settings-page *::after {
+  box-sizing: border-box;
+}
+
+
+/* =========================================
+   PAGE HEADER
+========================================= */
+
+.settings-page-header {
+  margin-bottom: 24px;
+}
+
+.settings-page-title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 700;
+  color: #111827;
+}
+
+.settings-page-subtitle {
+  margin: 7px 0 0;
+  font-size: 14px;
+  color: #64748b;
+}
+
+
+/* =========================================
+   CARD
+========================================= */
+
+.settings-card {
+  width: 100%;
+  min-width: 0;
+  background: #ffffff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.05);
+  overflow: hidden;
+}
+
+.security-card {
+  margin-bottom: 20px;
+}
+
+
+/* =========================================
+   CARD HEADER
+========================================= */
+
+.settings-card-header {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+
+  min-width: 0;
+
+  padding: 20px 24px;
+
+  border-bottom: 1px solid #edf0f4;
+}
+
+.settings-card-header > div:last-child {
+  min-width: 0;
+}
+
+.settings-card-header h2 {
+  margin: 0;
+
+  font-size: 17px;
+  font-weight: 700;
+
+  color: #111827;
+}
+
+.settings-card-header p {
+  margin: 5px 0 0;
+
+  font-size: 13px;
+  line-height: 1.4;
+
+  color: #64748b;
+}
+
+
+/* =========================================
+   ICON
+========================================= */
+
+.settings-card-icon {
+  width: 42px;
+  height: 42px;
+  min-width: 42px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 11px;
+
+  font-size: 19px;
+}
+
+.security-icon {
+  background: #eef2ff;
+}
+
+.warehouse-icon {
+  background: #fff7ed;
+}
+
+.inventory-icon {
+  background: #ecfdf5;
+}
+
+
+/* =========================================
+   CARD BODY
+========================================= */
+
+.settings-card-body {
+  width: 100%;
+  min-width: 0;
+  padding: 24px;
+}
+
+
+/* =========================================
+   SECURITY GRID
+========================================= */
+
+.password-grid {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+
+  gap: 18px;
+
+  width: 100%;
+}
+
+
+/* =========================================
+   PREFERENCE GRID
+========================================= */
+
+.settings-preferences-grid {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    minmax(0, 1fr);
+
+  gap: 20px;
+
+  width: 100%;
+  min-width: 0;
+}
+
+
+/* =========================================
+   FORM FIELD
+========================================= */
+
+.settings-field {
+  width: 100%;
+  min-width: 0;
+  margin-bottom: 18px;
+}
+
+.settings-field label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  color: #334155;
+}
+
+.settings-field input,
+.settings-field select {
+  display: block;
+
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+
+  height: 44px;
+
+  padding: 0 13px;
+
+  border: 1px solid #d5dbe3;
+  border-radius: 9px;
+
+  background: #ffffff;
+
+  color: #1e293b;
+
+  font-family: inherit;
+  font-size: 13px;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s ease,
+    box-shadow 0.2s ease;
+}
+
+.settings-field input::placeholder {
+  color: #94a3b8;
+}
+
+.settings-field input:focus,
+.settings-field select:focus {
+  border-color: #4f46e5;
+
+  box-shadow:
+    0 0 0 3px rgba(79, 70, 229, 0.08);
+}
+
+.field-hint {
+  display: block;
+
+  margin-top: 6px;
+
+  font-size: 11px;
+  line-height: 1.4;
+
+  color: #94a3b8;
+}
+
+
+/* =========================================
+   INFO BOX
+========================================= */
+
+.settings-info-box {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+
+  width: 100%;
+
+  margin: 4px 0 18px;
+
+  padding: 12px 13px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 9px;
+
+  background: #f8fafc;
+}
+
+.settings-info-box span {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.settings-info-box p {
+  margin: 0;
+
+  font-size: 11px;
+  line-height: 1.5;
+
+  color: #64748b;
+}
+
+
+/* =========================================
+   INVENTORY TOGGLE
+========================================= */
+
+.inventory-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 15px;
+
+  width: 100%;
+  min-width: 0;
+
+  margin: 4px 0 18px;
+  padding: 14px;
+
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+
+  background: #f8fafc;
+}
+
+.inventory-toggle > div {
+  min-width: 0;
+}
+
+.inventory-toggle strong {
+  display: block;
+
+  font-size: 13px;
+  font-weight: 600;
+
+  color: #1e293b;
+}
+
+.inventory-toggle p {
+  margin: 4px 0 0;
+
+  font-size: 11px;
+  line-height: 1.4;
+
+  color: #64748b;
+}
+
+
+/* =========================================
+   SWITCH
+========================================= */
+
+.settings-switch {
+  position: relative;
+
+  display: block;
+
+  width: 46px;
+  height: 25px;
+  min-width: 46px;
+
+  flex-shrink: 0;
+}
+
+.settings-switch input {
+  position: absolute;
+
+  width: 0;
+  height: 0;
+
+  opacity: 0;
+}
+
+.settings-slider {
+  position: absolute;
+
+  inset: 0;
+
+  cursor: pointer;
+
+  background: #cbd5e1;
+
+  border-radius: 30px;
+
+  transition: 0.2s;
+}
+
+.settings-slider::before {
+  content: '';
+
+  position: absolute;
+
+  width: 19px;
+  height: 19px;
+
+  left: 3px;
+  top: 3px;
+
+  border-radius: 50%;
+
+  background: #ffffff;
+
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.18);
+
+  transition: 0.2s;
+}
+
+.settings-switch input:checked + .settings-slider {
+  background: #4f46e5;
+}
+
+.settings-switch input:checked + .settings-slider::before {
+  transform: translateX(21px);
+}
+
+
+/* =========================================
+   ACTIONS
+========================================= */
+
+.settings-actions {
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+
+  width: 100%;
+
+  margin-top: 4px;
+}
+
+.settings-primary-btn {
+  min-height: 40px;
+
+  padding: 0 18px;
+
+  border: 0;
+  border-radius: 8px;
+
+  background: #4f46e5;
+  color: #ffffff;
+
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background 0.2s ease,
+    transform 0.1s ease;
+}
+
+.settings-primary-btn:hover {
+  background: #4338ca;
+}
+
+.settings-primary-btn:active {
+  transform: translateY(1px);
+}
+
+.settings-primary-btn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+
+
+/* =========================================
+   SUCCESS
+========================================= */
+
+.settings-alert {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+
+  width: 100%;
+  min-width: 0;
+
+  margin: 4px 0 18px;
+
+  padding: 12px 14px;
+
+  border-radius: 8px;
+
+  font-size: 12px;
+  font-weight: 600;
+
+  line-height: 1.4;
+}
+
+.settings-alert.success {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #047857;
+}
+
+.settings-alert.error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #dc2626;
+}
+
+.settings-alert span {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+
+/* =========================================
+   RESPONSIVE
+========================================= */
+
+@media (max-width: 1100px) {
+
+  .password-grid {
+    grid-template-columns:
+      minmax(0, 1fr)
+      minmax(0, 1fr);
+  }
+
+  .password-grid .settings-field:last-child {
+    grid-column: 1 / -1;
+  }
+}
+
+
+@media (max-width: 800px) {
+
+  .settings-preferences-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .password-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .password-grid .settings-field:last-child {
+    grid-column: auto;
+  }
+}
+
+
+@media (max-width: 600px) {
+
+  .settings-card-header {
+    padding: 17px;
+  }
+
+  .settings-card-body {
+    padding: 17px;
+  }
+
+  .settings-card-header h2 {
+    font-size: 15px;
+  }
+
+  .settings-card-header p {
+    font-size: 12px;
+  }
+
+  .settings-actions {
+    justify-content: stretch;
+  }
+
+  .settings-primary-btn {
+    width: 100%;
+  }
+
+  .inventory-toggle {
+    align-items: center;
+  }
+}

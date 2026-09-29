@@ -87,7 +87,7 @@ export const changePassword = async (req, res) => {
 
     const matches = await bcrypt.compare(currentPassword, user.passwordHash);
     if (!matches) {
-      return res.status(401).json({ message: "Current password is incorrect" });
+      return res.status(400).json({ message: "Current password is incorrect" });
     }
 
     const passwordHash = await bcrypt.hash(newPassword, 10);
@@ -151,24 +151,54 @@ export const register = async (req, res) => {
 
 export const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const rawIdentifier =
+      req.body.email ||
+      req.body.username ||
+      req.body.identifier;
 
-    if (!email || !password) {
+    const password = req.body.password;
+
+    if (!rawIdentifier || !password) {
       return res.status(400).json({
-        message: "Email and password are required",
+        message: "Email or username and password are required",
       });
     }
 
-    const user = await db.orm.public.User.first({
-      email,
+    const identifier = String(rawIdentifier).trim();
+
+    // First try exact email
+    let user = await db.orm.public.User.first({
+      email: identifier,
     });
+
+    // Then try exact username
+    if (!user) {
+      user = await db.orm.public.User.first({
+        username: identifier,
+      });
+    }
+
+    // Case-insensitive fallback
+    if (!user) {
+      const users = await db.orm.public.User.all();
+
+      const normalizedIdentifier = identifier.toLowerCase();
+
+      user =
+        users.find(
+          (item) =>
+            item.email?.toLowerCase() === normalizedIdentifier ||
+            item.username?.toLowerCase() === normalizedIdentifier
+        ) || null;
+    }
 
     if (!user) {
       return res.status(401).json({
-        message: "Invalid email or password",
+        message: "Invalid email/username or password",
       });
     }
 
+    // Compare entered password with the CURRENT database hash
     const isPasswordValid = await bcrypt.compare(
       password,
       user.passwordHash
@@ -176,7 +206,14 @@ export const login = async (req, res) => {
 
     if (!isPasswordValid) {
       return res.status(401).json({
-        message: "Invalid email or password",
+        message: "Invalid email/username or password",
+      });
+    }
+
+    if (!process.env.JWT_SECRET) {
+      console.error("JWT_SECRET is missing");
+      return res.status(500).json({
+        message: "Server authentication configuration is missing",
       });
     }
 
@@ -191,7 +228,7 @@ export const login = async (req, res) => {
       }
     );
 
-    res.json({
+    return res.json({
       message: "Login successful",
       token,
       user: {
@@ -203,14 +240,13 @@ export const login = async (req, res) => {
         phone: user.phone,
       },
     });
- } catch (error) {
-  console.error("========== LOGIN ERROR ==========");
-  console.error(error);
-  console.error("=================================");
+  } catch (error) {
+    console.error("========== LOGIN ERROR ==========");
+    console.error(error);
+    console.error("=================================");
 
-  res.status(500).json({
-    message: "Login failed",
-    error: error.message,
-  });
-}
+    return res.status(500).json({
+      message: "Login failed",
+    });
+  }
 };
