@@ -106,10 +106,27 @@ export default function Dashboard() {
   });
 
   const stockStatusData = [
-    { name: 'In Stock', value: inventoryTotals.filter((product) => product.status === 'in_stock').length, color: 'var(--success-500)' },
-    { name: 'Low Stock', value: inventoryTotals.filter((product) => product.status === 'low_stock').length, color: 'var(--warning-500)' },
-    { name: 'Out of Stock', value: inventoryTotals.filter((product) => product.status === 'out_of_stock').length, color: 'var(--danger-500)' },
+    { 
+      name: 'In Stock', 
+      value: inventoryTotals.filter((product) => product.status === 'in_stock').length, 
+      color: '#10b981',
+      icon: '✓'
+    },
+    { 
+      name: 'Low Stock', 
+      value: inventoryTotals.filter((product) => product.status === 'low_stock').length, 
+      color: '#dc2626',
+      icon: '⚠️'
+    },
+    { 
+      name: 'Out of Stock', 
+      value: inventoryTotals.filter((product) => product.status === 'out_of_stock').length, 
+      color: '#991b1b',
+      icon: '✖'
+    },
   ];
+
+  const totalProducts = stockStatusData.reduce((sum, item) => sum + item.value, 0);
 
   const chartSales = [
     { date: 'Mon', sales: 7800 },
@@ -240,24 +257,193 @@ export default function Dashboard() {
 
       <div className="card">
         <div className="card-header">
-          <h3 className="card-title">Stock Status Distribution</h3>
-          <div style={{ display: 'flex', gap: 'var(--space-4)', fontSize: 'var(--text-sm)' }}>
-            {stockStatusData.map((item) => (
-              <div key={item.name} style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-2)' }}>
-                <div style={{ width: '12px', height: '12px', borderRadius: 'var(--radius-sm)', backgroundColor: item.color }}></div>
-                <span style={{ color: 'var(--text-secondary)' }}>{item.name}: <strong>{item.value}</strong></span>
-              </div>
-            ))}
+          <div>
+            <h3 className="card-title">Stock Status Distribution</h3>
+            <p style={{ fontSize: '13px', color: '#6b7280', marginTop: '4px' }}>
+              Overview of inventory health across {totalProducts} products
+            </p>
           </div>
         </div>
-        <ResponsiveContainer width="100%" height={280}>
-          <PieChart>
-            <Pie data={stockStatusData} cx="50%" cy="50%" labelLine={false} outerRadius={100} dataKey="value">
-              {stockStatusData.map((entry, index) => (<Cell key={`cell-${index}`} fill={entry.color} />))}
-            </Pie>
-            <Tooltip contentStyle={{ backgroundColor: 'var(--bg-primary)', border: '1px solid var(--border-primary)', borderRadius: 'var(--radius-md)', fontSize: 'var(--text-sm)' }} />
-          </PieChart>
-        </ResponsiveContainer>
+        
+        <div style={{ 
+          display: 'grid', 
+          gridTemplateColumns: '400px 1fr', 
+          gap: '40px', 
+          alignItems: 'start',
+          padding: '20px 0'
+        }}>
+          {/* Pie Chart */}
+          <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'center' }}>
+            <ResponsiveContainer width="100%" height={350}>
+              <PieChart>
+                <Pie 
+                  data={stockStatusData} 
+                  cx="50%" 
+                  cy="50%" 
+                  labelLine={false}
+                  label={({ percent }) => `${(percent * 100).toFixed(1)}%`}
+                  outerRadius={110}
+                  innerRadius={70}
+                  dataKey="value"
+                  paddingAngle={3}
+                >
+                  {stockStatusData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={entry.color} stroke="#ffffff" strokeWidth={3} />
+                  ))}
+                </Pie>
+                <Tooltip 
+                  contentStyle={{ 
+                    backgroundColor: '#ffffff', 
+                    border: '1px solid #e5e7eb', 
+                    borderRadius: '8px', 
+                    fontSize: '14px',
+                    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                    padding: '12px'
+                  }}
+                  formatter={(value, name) => [
+                    `${value} products (${((value / totalProducts) * 100).toFixed(1)}%)`,
+                    name
+                  ]}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+
+          {/* Legend and Stats */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+            {stockStatusData.map((item) => {
+              const percentage = totalProducts > 0 ? ((item.value / totalProducts) * 100).toFixed(1) : 0;
+              
+              return (
+                <div 
+                  key={item.name}
+                  style={{
+                    padding: '20px',
+                    borderRadius: '12px',
+                    border: `2px solid ${item.color}`,
+                    backgroundColor: `${item.color}15`,
+                    transition: 'all 0.2s ease',
+                    cursor: 'pointer',
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                    e.currentTarget.style.boxShadow = '0 8px 16px rgba(0, 0, 0, 0.1)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)';
+                    e.currentTarget.style.boxShadow = 'none';
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+                    {/* Icon */}
+                    <div style={{
+                      minWidth: '48px',
+                      height: '48px',
+                      borderRadius: '12px',
+                      backgroundColor: item.color,
+                      display: 'flex',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      fontSize: '22px',
+                      color: '#ffffff',
+                      fontWeight: 'bold',
+                      flexShrink: 0,
+                    }}>
+                      {item.icon}
+                    </div>
+                    
+                    {/* Content */}
+                    <div style={{ flex: 1, minWidth: 0 }}>
+                      <div style={{ 
+                        fontSize: '15px', 
+                        fontWeight: '700', 
+                        color: '#111827',
+                        marginBottom: '4px'
+                      }}>
+                        {item.name}
+                      </div>
+                      <div style={{ 
+                        fontSize: '12px', 
+                        color: '#6b7280',
+                        marginBottom: '12px'
+                      }}>
+                        {item.name === 'In Stock' && 'Healthy inventory levels'}
+                        {item.name === 'Low Stock' && 'Needs reordering soon'}
+                        {item.name === 'Out of Stock' && 'Immediate action required'}
+                      </div>
+                      
+                      {/* Count and Percentage */}
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: '8px', marginBottom: '10px' }}>
+                        <span style={{ 
+                          fontSize: '28px', 
+                          fontWeight: '700', 
+                          color: item.color,
+                          lineHeight: 1
+                        }}>
+                          {item.value}
+                        </span>
+                        <span style={{ 
+                          fontSize: '15px', 
+                          fontWeight: '600', 
+                          color: '#6b7280' 
+                        }}>
+                          ({percentage}%)
+                        </span>
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div style={{ 
+                        height: '6px',
+                        backgroundColor: '#e5e7eb',
+                        borderRadius: '3px',
+                        overflow: 'hidden'
+                      }}>
+                        <div style={{
+                          height: '100%',
+                          width: `${percentage}%`,
+                          backgroundColor: item.color,
+                          borderRadius: '3px',
+                          transition: 'width 0.5s ease-in-out'
+                        }}></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Summary */}
+            <div style={{
+              padding: '16px 20px',
+              borderRadius: '10px',
+              backgroundColor: '#f9fafb',
+              border: '1px solid #e5e7eb',
+              marginTop: '4px'
+            }}>
+              <div style={{ 
+                display: 'flex', 
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                fontSize: '14px'
+              }}>
+                <div>
+                  <span style={{ color: '#6b7280' }}>Total Products: </span>
+                  <span style={{ fontWeight: '700', color: '#111827' }}>{totalProducts}</span>
+                </div>
+                <div>
+                  <span style={{ color: '#6b7280' }}>Overall Health: </span>
+                  {stockStatusData[0].value > totalProducts * 0.7 ? (
+                    <span style={{ color: '#10b981', fontWeight: '700' }}>✓ Good</span>
+                  ) : stockStatusData[1].value + stockStatusData[2].value > totalProducts * 0.5 ? (
+                    <span style={{ color: '#dc2626', fontWeight: '700' }}>⚠ Critical</span>
+                  ) : (
+                    <span style={{ color: '#f59e0b', fontWeight: '700' }}>⚠ Needs Attention</span>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   );
