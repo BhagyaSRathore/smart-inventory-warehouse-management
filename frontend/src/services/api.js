@@ -36,7 +36,7 @@ async function apiRequest(endpoint, options = {}) {
   }
 
   if (!response.ok) {
-    if (response.status === 401) {
+    if (response.status === 401 && endpoint !== "/auth/login" && endpoint !== "/auth/change-password") {
       clearAuthSession();
     }
 
@@ -73,12 +73,26 @@ export const fetchCurrentUser = async () => {
   return response.user || null;
 };
 
-export const updateCurrentUser = (userData) =>
-  apiRequest("/auth/me", {
+export const updateCurrentUser = async (userData) => {
+  const response = await apiRequest("/auth/me", {
     method: "PUT",
     body: JSON.stringify(userData),
   });
 
+  // Keep local user data in sync
+  if (response?.user) {
+    localStorage.setItem(
+      "user",
+      JSON.stringify(response.user)
+    );
+
+    window.dispatchEvent(
+      new CustomEvent("auth:login")
+    );
+  }
+
+  return response;
+};
 export const changePassword = (passwordData) =>
   apiRequest("/auth/change-password", {
     method: "PATCH",
@@ -457,11 +471,14 @@ export const getRestockByProduct = async (productId) => {
 };
 
 // ============================================
-// AI ASSISTANT (Future Integration)
+// AI ASSISTANT
 // ============================================
 
 export const askAI = async (question) => {
-  // TODO: Implement when Gemini AI is integrated
-  console.warn("AI assistant not yet implemented");
-  throw new Error("AI assistant not yet implemented");
+  return await apiRequest("/ai/chat", {
+    method: "POST",
+    body: JSON.stringify({ message: question }),
+  });
 };
+
+

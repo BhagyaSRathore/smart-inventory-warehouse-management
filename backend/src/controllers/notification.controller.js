@@ -1,16 +1,20 @@
 import { db } from "../db.ts";
 
 const getVisibleNotifications = async (userId) => {
-  const notifications = await db.orm.public.Notification.all();
-  const numericUserId = Number(userId);
+  try {
+    const notifications = await db.orm.public.Notification.all();
+    const numericUserId = Number(userId);
 
-  return notifications.filter((notification) => {
-    if (notification.userId == null) {
-      return true;
-    }
+    return notifications.filter((notification) => {
+      if (notification.userId == null) {
+        return true;
+      }
 
-    return Number(notification.userId) === numericUserId;
-  });
+      return Number(notification.userId) === numericUserId;
+    });
+  } catch (error) {
+    return [];
+  }
 };
 
 export const getNotifications = async (req, res) => {

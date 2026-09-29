@@ -1,6 +1,17 @@
 import { useEffect, useState } from "react";
-import { User, Mail, Phone, Shield, Save, CheckCircle } from "lucide-react";
-import { fetchCurrentUser, updateCurrentUser } from "../services/api";
+import {
+  User,
+  Mail,
+  Phone,
+  Shield,
+  Save,
+  CheckCircle,
+} from "lucide-react";
+
+import {
+  fetchCurrentUser,
+  updateCurrentUser,
+} from "../services/api";
 
 export default function Profile() {
   const [formData, setFormData] = useState({
@@ -15,10 +26,16 @@ export default function Profile() {
   const [error, setError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  // =========================================
+  // LOAD PROFILE
+  // =========================================
+
   useEffect(() => {
     const loadProfile = async () => {
       try {
         setLoading(true);
+        setError("");
+
         const user = await fetchCurrentUser();
 
         setFormData({
@@ -28,7 +45,9 @@ export default function Profile() {
           role: user?.role || "",
         });
       } catch (requestError) {
-        setError(requestError.message || "Unable to load profile.");
+        setError(
+          requestError.message || "Unable to load profile."
+        );
       } finally {
         setLoading(false);
       }
@@ -36,6 +55,10 @@ export default function Profile() {
 
     loadProfile();
   }, []);
+
+  // =========================================
+  // INPUT CHANGE
+  // =========================================
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -49,30 +72,76 @@ export default function Profile() {
     setError("");
   };
 
+  // =========================================
+  // SAVE PROFILE
+  // =========================================
+
   const handleSubmit = async (event) => {
-    event.preventDefault();
+  event.preventDefault();
 
-    try {
-      setIsSubmitting(true);
-      setMessage("");
-      setError("");
+  try {
+    setIsSubmitting(true);
+    setMessage("");
+    setError("");
 
-      const updatedUser = await updateCurrentUser(formData);
+    const response = await updateCurrentUser({
+      name: formData.name,
+      email: formData.email,
+      phone: formData.phone,
+    });
 
-      setFormData({
-        name: updatedUser?.name || "",
-        email: updatedUser?.email || "",
-        phone: updatedUser?.phone || "",
-        role: updatedUser?.role || "",
-      });
+    // Backend response:
+    // { message, user }
 
-      setMessage("Profile updated successfully.");
-    } catch (requestError) {
-      setError(requestError.message || "Unable to update profile.");
-    } finally {
-      setIsSubmitting(false);
+    const updatedUser = response?.user;
+
+    if (!updatedUser) {
+      throw new Error(
+        "Updated user data was not returned."
+      );
     }
-  };
+
+    // Update Profile UI
+    setFormData({
+      name: updatedUser.name || "",
+      email: updatedUser.email || "",
+      phone: updatedUser.phone || "",
+      role: updatedUser.role || "",
+    });
+
+    // Update localStorage
+    localStorage.setItem(
+      "user",
+      JSON.stringify(updatedUser)
+    );
+
+    // Update AuthContext / Topbar
+    window.dispatchEvent(
+      new CustomEvent("auth:login", {
+        detail: updatedUser,
+      })
+    );
+
+    setMessage(
+      "Profile updated successfully."
+    );
+  } catch (requestError) {
+    console.error(
+      "Profile update error:",
+      requestError
+    );
+
+    setError(
+      requestError.message ||
+        "Unable to update profile."
+    );
+  } finally {
+    setIsSubmitting(false);
+  }
+};
+  // =========================================
+  // LOADING
+  // =========================================
 
   if (loading) {
     return (
@@ -84,24 +153,36 @@ export default function Profile() {
     );
   }
 
+  // =========================================
+  // UI
+  // =========================================
+
   return (
     <div className="profile-page">
 
-      {/* Header */}
+      {/* HEADER */}
+
       <div className="profile-header">
         <div>
-          <h1 className="page-title">My Profile</h1>
+          <h1 className="page-title">
+            My Profile
+          </h1>
+
           <p className="page-subtitle">
             Manage your personal information and account details
           </p>
         </div>
       </div>
 
-      {/* Profile Card */}
+
+      {/* PROFILE CARD */}
+
       <div className="profile-card">
 
-        {/* Profile Top */}
+        {/* PROFILE TOP */}
+
         <div className="profile-card-top">
+
           <div className="profile-avatar">
             {formData.name
               ? formData.name.charAt(0).toUpperCase()
@@ -117,22 +198,36 @@ export default function Profile() {
               {formData.role || "Administrator"}
             </p>
           </div>
+
         </div>
 
-        {/* Divider */}
+
+        {/* DIVIDER */}
+
         <div className="profile-divider" />
+
+
+        {/* FORM */}
 
         <form onSubmit={handleSubmit}>
 
           <div className="profile-section-title">
-            <h3>Account Information</h3>
-            <p>Update your account details below.</p>
+            <h3>
+              Account Information
+            </h3>
+
+            <p>
+              Update your account details below.
+            </p>
           </div>
+
 
           <div className="profile-form-grid">
 
-            {/* Name */}
+            {/* NAME */}
+
             <div className="profile-field">
+
               <label htmlFor="name">
                 <User size={16} />
                 Full Name
@@ -145,10 +240,14 @@ export default function Profile() {
                 onChange={handleChange}
                 placeholder="Enter your name"
               />
+
             </div>
 
-            {/* Email */}
+
+            {/* EMAIL */}
+
             <div className="profile-field">
+
               <label htmlFor="email">
                 <Mail size={16} />
                 Email Address
@@ -162,10 +261,14 @@ export default function Profile() {
                 onChange={handleChange}
                 placeholder="Enter your email"
               />
+
             </div>
 
-            {/* Phone */}
+
+            {/* PHONE */}
+
             <div className="profile-field">
+
               <label htmlFor="phone">
                 <Phone size={16} />
                 Phone Number
@@ -178,10 +281,14 @@ export default function Profile() {
                 onChange={handleChange}
                 placeholder="Enter your phone number"
               />
+
             </div>
 
-            {/* Role */}
+
+            {/* ROLE */}
+
             <div className="profile-field">
+
               <label htmlFor="role">
                 <Shield size={16} />
                 Role
@@ -197,17 +304,26 @@ export default function Profile() {
               <small>
                 Your account role cannot be changed here.
               </small>
+
             </div>
 
           </div>
 
-          {/* Messages */}
+
+          {/* SUCCESS MESSAGE */}
+
           {message && (
             <div className="profile-success">
               <CheckCircle size={18} />
-              <span>{message}</span>
+
+              <span>
+                {message}
+              </span>
             </div>
           )}
+
+
+          {/* ERROR MESSAGE */}
 
           {error && (
             <div className="profile-error">
@@ -215,23 +331,31 @@ export default function Profile() {
             </div>
           )}
 
-          {/* Actions */}
+
+          {/* SAVE */}
+
           <div className="profile-actions">
+
             <button
               type="submit"
               className="profile-save-btn"
               disabled={isSubmitting}
             >
+
               <Save size={17} />
 
               {isSubmitting
                 ? "Saving..."
                 : "Save Changes"}
+
             </button>
+
           </div>
 
         </form>
+
       </div>
+
     </div>
   );
 }

@@ -1,5 +1,5 @@
-// import mlRoutes from "./src/routes/ml.routes.js";  // Commented out - ML integration pending
-// import aiRoutes from "./src/routes/ai.routes.js";  // Commented out - AI integration pending
+import mlRoutes from "./src/routes/ml.routes.js";
+import aiRoutes from "./src/routes/ai.routes.js";
 import express from "express";
 import cors from "cors";
 import "dotenv/config";
@@ -19,8 +19,8 @@ import notificationRoutes from "./src/routes/notification.routes.js";
 const app = express();
 app.use(cors());
 app.use(express.json());
-// app.use("/api/ai", aiRoutes);  // Commented out - AI integration pending
-// app.use("/api", mlRoutes);  // Commented out - ML integration pending
+app.use("/api/ai", aiRoutes);
+app.use("/api", mlRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/products", productRoutes);
 app.use("/api/categories", categoryRoutes);
