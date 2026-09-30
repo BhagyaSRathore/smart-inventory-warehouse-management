@@ -103,7 +103,7 @@ graph TB
 ```
 smart-inventory-warehouse-management/
 │
-├── frontend/              # React web application
+├── web/                  # React web application
 │   ├── src/
 │   │   ├── components/   # Reusable UI components
 │   │   ├── pages/        # Page components
@@ -115,16 +115,16 @@ smart-inventory-warehouse-management/
 │   ├── public/           # Static assets
 │   └── package.json      # Dependencies
 │
-├── backend/              # Node.js + Express API (upcoming)
+├── mobile/               # Android/React Native app (upcoming)
+│   └── .gitkeep
+│
+├── backend/              # Node.js + Express API (shared backend)
 │   └── README.md
 │
-├── mobile/               # React Native app (upcoming)
+├── database/             # PostgreSQL + Prisma (shared database)
 │   └── README.md
 │
-├── ml-service/           # Python ML service (upcoming)
-│   └── README.md
-│
-├── database/             # Database schemas (upcoming)
+├── ml-service/           # Python ML service (shared service)
 │   └── README.md
 │
 ├── docs/                 # Documentation
@@ -150,9 +150,9 @@ smart-inventory-warehouse-management/
    cd smart-inventory-warehouse-management
    ```
 
-2. **Install frontend dependencies**
+2. **Install web frontend dependencies**
    ```bash
-   cd frontend
+   cd web
    npm install
    ```
 
@@ -385,7 +385,7 @@ We welcome contributions! Please follow:
 - Bhagya Singh Rathore - Project Lead
 - Bhagya Singh Rathore - Frontend Developer
 - Anushka Pandey & Bhagya Singh Rathore - Backend Developer
-- Bhawi Sharma & Bhawna Soni- ML Engineer
+- Bhawi Sharma - ML Engineer
 
 ## 📄 License
 
