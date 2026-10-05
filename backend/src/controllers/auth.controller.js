@@ -102,7 +102,7 @@ export const changePassword = async (req, res) => {
 
 export const register = async (req, res) => {
   try {
-    const { email, username, name, phone, password } = req.body;
+    const { email, username, name, phone, password, role } = req.body;
 
     if (!email || !password) {
       return res.status(400).json({
@@ -128,6 +128,7 @@ export const register = async (req, res) => {
   name,
   phone,
   passwordHash,
+  role: role || "staff",
 });
     res.status(201).json({
       message: "User registered successfully",
@@ -247,6 +248,101 @@ export const login = async (req, res) => {
 
     return res.status(500).json({
       message: "Login failed",
+    });
+  }
+};
+
+export const forgotPassword = async (req, res) => {
+  try {
+    const { email } = req.body;
+
+    if (!email) {
+      return res.status(400).json({
+        message: "Email is required",
+      });
+    }
+
+    const trimmedEmail = String(email).trim();
+
+    let user = await db.orm.public.User.first({
+      email: trimmedEmail,
+    });
+
+    if (!user) {
+      const users = await db.orm.public.User.all();
+      const normalized = trimmedEmail.toLowerCase();
+      user = users.find(
+        (u) => u.email?.toLowerCase() === normalized
+      ) || null;
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        message: "No user found with this email address",
+      });
+    }
+
+    return res.status(200).json({
+      message: "User verified successfully",
+      email: user.email,
+    });
+  } catch (error) {
+    console.error("Forgot password error:", error);
+    return res.status(500).json({
+      message: "Failed to process forgot password request",
+    });
+  }
+};
+
+export const resetPassword = async (req, res) => {
+  try {
+    const { email, newPassword } = req.body;
+
+    if (!email || !newPassword) {
+      return res.status(400).json({
+        message: "Email and new password are required",
+      });
+    }
+
+    if (newPassword.length < 8) {
+      return res.status(400).json({
+        message: "Password must be at least 8 characters long",
+      });
+    }
+
+    const trimmedEmail = String(email).trim();
+
+    let user = await db.orm.public.User.first({
+      email: trimmedEmail,
+    });
+
+    if (!user) {
+      const users = await db.orm.public.User.all();
+      const normalized = trimmedEmail.toLowerCase();
+      user = users.find(
+        (u) => u.email?.toLowerCase() === normalized
+      ) || null;
+    }
+
+    if (!user) {
+      return res.status(404).json({
+        message: "User not found",
+      });
+    }
+
+    const passwordHash = await bcrypt.hash(newPassword, 10);
+
+    await db.orm.public.User.where({ id: user.id }).update({
+      passwordHash,
+    });
+
+    return res.status(200).json({
+      message: "Password updated successfully",
+    });
+  } catch (error) {
+    console.error("Reset password error:", error);
+    return res.status(500).json({
+      message: "Failed to reset password",
     });
   }
 };
