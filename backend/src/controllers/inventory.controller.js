@@ -47,6 +47,17 @@ export const createInventory = async (req, res) => {
       rackId: rackId ? Number(rackId) : null,
       quantity: quantity ?? 0,
     });
+
+    try {
+      await notifyInventoryThreshold({
+        productId: Number(productId),
+        warehouseId: Number(warehouseId),
+        quantity: quantity ?? 0,
+      });
+    } catch (notifyErr) {
+      console.warn("Threshold notification error in createInventory:", notifyErr.message);
+    }
+
     res.status(201).json({
       message: "Inventory created successfully",
       inventory,
@@ -463,6 +474,19 @@ export const transfer = async (req, res) => {
         performedBy: req.user?.userId || null,
       });
     });
+
+    try {
+      await notifyInventoryThreshold({
+        productId: Number(productId),
+        warehouseId: Number(sourceWarehouseId),
+      });
+      await notifyInventoryThreshold({
+        productId: Number(productId),
+        warehouseId: Number(destinationWarehouseId),
+      });
+    } catch (notifyErr) {
+      console.warn("Transfer notification error:", notifyErr.message);
+    }
     
     res.status(200).json({
       message: "Transfer completed successfully",
@@ -578,6 +602,16 @@ export const adjustment = async (req, res) => {
         performedBy: req.user?.userId || null,
       });
     });
+
+    try {
+      await notifyInventoryThreshold({
+        productId: Number(productId),
+        warehouseId: Number(warehouseId),
+        quantity: Number(newQuantity),
+      });
+    } catch (notifyErr) {
+      console.warn("Adjustment notification error:", notifyErr.message);
+    }
     
     res.status(200).json({
       message: "Inventory adjustment completed successfully",
@@ -666,38 +700,112 @@ export const getLowStock = async (req, res) => {
 
 export const getInventories = async (req, res) => {
   try {
+    // Get all inventory records
     const inventories = await db.orm.public.Inventory.all();
-    res.json({
-      message: "Inventory fetched successfully",
-      inventories,
+
+    // Get all products
+    const products = await db.orm.public.Product.all();
+
+    // Create product map
+    const productMap = {};
+
+    products.forEach(product => {
+      productMap[product.id] = product;
+    });
+
+    // Enrich inventory data
+    const enrichedInventories = await Promise.all(
+      inventories.map(async inv => {
+        const product = productMap[inv.productId];
+
+        // Get warehouse
+        const warehouse =
+          await db.orm.public.Warehouse.first({
+            id: inv.warehouseId,
+          });
+
+        // Get rack if available
+        let rack = null;
+
+        if (inv.rackId) {
+          rack = await db.orm.public.Rack.first({
+            id: inv.rackId,
+          });
+        }
+
+        return {
+          id: inv.id,
+          productId: inv.productId,
+          warehouseId: inv.warehouseId,
+          rackId: inv.rackId,
+          quantity: inv.quantity,
+
+          product: product
+            ? {
+                id: product.id,
+                name: product.name,
+                sku: product.sku,
+                reorderLevel: product.reorderLevel,
+                safetyStock: product.safetyStock,
+              }
+            : null,
+
+          warehouse: warehouse
+            ? {
+                id: warehouse.id,
+                name: warehouse.name,
+              }
+            : null,
+
+          rack: rack
+            ? {
+                id: rack.id,
+                name: rack.name,
+              }
+            : null,
+        };
+      }),
+    );
+
+    res.status(200).json({
+      message: 'Inventory fetched successfully',
+      inventories: enrichedInventories,
     });
   } catch (error) {
-    console.error(error);
+    console.error('Get inventories error:', error);
+
     res.status(500).json({
-      message: "Failed to fetch inventory",
+      message: 'Failed to fetch inventory',
+      error: error.message,
     });
   }
 };
 
 export const getInventory = async (req, res) => {
   try {
-    const { id } = req.params;
-    const inventory = await db.orm.public.Inventory.first({
-      id: Number(id),
-    });
+    const {id} = req.params;
+
+    const inventory =
+      await db.orm.public.Inventory.first({
+        id: Number(id),
+      });
+
     if (!inventory) {
       return res.status(404).json({
-        message: "Inventory not found",
+        message: 'Inventory not found',
       });
     }
+
     res.json({
-      message: "Inventory fetched successfully",
+      message: 'Inventory fetched successfully',
       inventory,
     });
   } catch (error) {
     console.error(error);
+
     res.status(500).json({
-      message: "Failed to fetch inventory",
+      message: 'Failed to fetch inventory',
+      error: error.message,
     });
   }
 };
@@ -722,6 +830,17 @@ export const updateInventory = async (req, res) => {
         rackId: rackId ? Number(rackId) : null,
         quantity,
       });
+
+    try {
+      await notifyInventoryThreshold({
+        productId: Number(productId || existingInventory.productId),
+        warehouseId: Number(warehouseId || existingInventory.warehouseId),
+        quantity: quantity !== undefined ? Number(quantity) : undefined,
+      });
+    } catch (notifyErr) {
+      console.warn("Update inventory notification error:", notifyErr.message);
+    }
+
     res.json({
       message: "Inventory updated successfully",
       inventory,

@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -12,6 +12,7 @@ import {
   Platform,
 } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useAppTheme, ThemeColors } from '../../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -57,10 +58,12 @@ type Props = {
 };
 
 const OnboardingScreen: React.FC<Props> = ({ navigation, onFinish }) => {
+  const { theme, isDark } = useAppTheme();
+  const styles = useMemo(() => getStyles(theme, isDark), [theme, isDark]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const flatListRef = useRef<FlatList>(null);
 
-  const isDarkMode = ONBOARDING_SLIDES[currentIndex]?.theme === 'dark';
+  const isDarkMode = isDark || ONBOARDING_SLIDES[currentIndex]?.theme === 'dark';
 
   const handleFinishOnboarding = async () => {
     try {
@@ -103,10 +106,10 @@ const OnboardingScreen: React.FC<Props> = ({ navigation, onFinish }) => {
   const viewConfigRef = useRef({ viewAreaCoveragePercentThreshold: 50 });
 
   const renderSlide = ({ item }: { item: OnboardingSlide }) => {
-    const isDark = item.theme === 'dark';
+    const isSlideDark = isDark || item.theme === 'dark';
 
     return (
-      <View style={[styles.slideContainer, isDark && styles.darkSlideContainer]}>
+      <View style={[styles.slideContainer, isSlideDark && styles.darkSlideContainer]}>
         {/* Top Header / Skip Button */}
         <View style={styles.headerRow}>
           <View style={styles.headerSpacer} />
@@ -115,7 +118,7 @@ const OnboardingScreen: React.FC<Props> = ({ navigation, onFinish }) => {
             onPress={handleSkip}
             style={styles.skipButton}
           >
-            <Text style={[styles.skipText, isDark && styles.darkSkipText]}>Skip</Text>
+            <Text style={[styles.skipText, isSlideDark && styles.darkSkipText]}>Skip</Text>
           </TouchableOpacity>
         </View>
 
@@ -130,14 +133,14 @@ const OnboardingScreen: React.FC<Props> = ({ navigation, onFinish }) => {
 
         {/* Text Content */}
         <View style={styles.textContainer}>
-          <Text style={[styles.title, isDark && styles.darkTitle]}>
+          <Text style={[styles.title, isSlideDark && styles.darkTitle]}>
             {item.titlePrefix}{'\n'}
-            <Text style={[styles.titleHighlight, isDark && styles.darkTitleHighlight]}>
+            <Text style={[styles.titleHighlight, isSlideDark && styles.darkTitleHighlight]}>
               {item.titleHighlight}
             </Text>
           </Text>
 
-          <Text style={[styles.subtitle, isDark && styles.darkSubtitle]}>
+          <Text style={[styles.subtitle, isSlideDark && styles.darkSubtitle]}>
             {item.subtitle}
           </Text>
         </View>
@@ -210,168 +213,169 @@ const OnboardingScreen: React.FC<Props> = ({ navigation, onFinish }) => {
 
 export default OnboardingScreen;
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  lightSafeArea: {
-    backgroundColor: '#FFFFFF',
-  },
-  darkSafeArea: {
-    backgroundColor: '#050E24',
-  },
+const getStyles = (theme: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+    },
+    lightSafeArea: {
+      backgroundColor: theme.bg,
+    },
+    darkSafeArea: {
+      backgroundColor: isDark ? theme.bg : '#050E24',
+    },
 
-  slideContainer: {
-    width: width,
-    flex: 1,
-    justifyContent: 'space-between',
-    paddingHorizontal: 28,
-    paddingTop: Platform.OS === 'ios' ? 12 : 20,
-    paddingBottom: 20,
-    backgroundColor: '#FFFFFF',
-  },
-  darkSlideContainer: {
-    backgroundColor: '#050E24',
-  },
+    slideContainer: {
+      width: width,
+      flex: 1,
+      justifyContent: 'space-between',
+      paddingHorizontal: 28,
+      paddingTop: Platform.OS === 'ios' ? 12 : 20,
+      paddingBottom: 20,
+      backgroundColor: theme.bg,
+    },
+    darkSlideContainer: {
+      backgroundColor: isDark ? theme.bg : '#050E24',
+    },
 
-  // Header / Skip Button
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    width: '100%',
-    paddingTop: 4,
-  },
-  headerSpacer: {
-    width: 40,
-  },
-  skipButton: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-  },
-  skipText: {
-    fontSize: 15,
-    fontWeight: '600',
-    color: '#64748B',
-  },
-  darkSkipText: {
-    color: '#94A3B8',
-  },
+    // Header / Skip Button
+    headerRow: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      width: '100%',
+      paddingTop: 4,
+    },
+    headerSpacer: {
+      width: 40,
+    },
+    skipButton: {
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+    },
+    skipText: {
+      fontSize: 15,
+      fontWeight: '600',
+      color: theme.textSecondary,
+    },
+    darkSkipText: {
+      color: isDark ? theme.textSecondary : '#94A3B8',
+    },
 
-  // Hero Illustration
-  illustrationWrapper: {
-    flex: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    maxHeight: height * 0.46,
-    marginVertical: 10,
-  },
-  heroImage: {
-    width: width * 0.88,
-    height: '100%',
-  },
+    // Hero Illustration
+    illustrationWrapper: {
+      flex: 1,
+      alignItems: 'center',
+      justifyContent: 'center',
+      maxHeight: height * 0.46,
+      marginVertical: 10,
+    },
+    heroImage: {
+      width: width * 0.88,
+      height: '100%',
+    },
 
-  // Headings & Text Content
-  textContainer: {
-    width: '100%',
-    paddingBottom: 16,
-  },
-  title: {
-    fontSize: 29,
-    lineHeight: 36,
-    fontWeight: '800',
-    color: '#0F1E36',
-    letterSpacing: -0.5,
-  },
-  darkTitle: {
-    color: '#FFFFFF',
-  },
-  titleHighlight: {
-    color: '#136DEC',
-  },
-  darkTitleHighlight: {
-    color: '#2563EB',
-  },
-  subtitle: {
-    marginTop: 12,
-    fontSize: 14.5,
-    lineHeight: 22,
-    fontWeight: '400',
-    color: '#64748B',
-  },
-  darkSubtitle: {
-    color: '#94A3B8',
-  },
+    // Headings & Text Content
+    textContainer: {
+      width: '100%',
+      paddingBottom: 16,
+    },
+    title: {
+      fontSize: 29,
+      lineHeight: 36,
+      fontWeight: '800',
+      color: theme.textPrimary,
+      letterSpacing: -0.5,
+    },
+    darkTitle: {
+      color: isDark ? theme.textPrimary : '#FFFFFF',
+    },
+    titleHighlight: {
+      color: '#1769E0',
+    },
+    darkTitleHighlight: {
+      color: isDark ? '#3B82F6' : '#2563EB',
+    },
+    subtitle: {
+      marginTop: 12,
+      fontSize: 14.5,
+      lineHeight: 22,
+      fontWeight: '400',
+      color: theme.textSecondary,
+    },
+    darkSubtitle: {
+      color: isDark ? theme.textSecondary : '#94A3B8',
+    },
 
-  // Bottom Navigation Footer
-  footerContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingHorizontal: 28,
-    paddingBottom: Platform.OS === 'ios' ? 24 : 32,
-    paddingTop: 12,
-    backgroundColor: '#FFFFFF',
-  },
-  darkFooterContainer: {
-    backgroundColor: '#050E24',
-  },
+    // Bottom Navigation Footer
+    footerContainer: {
+      flexDirection: 'row',
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingHorizontal: 28,
+      paddingBottom: Platform.OS === 'ios' ? 24 : 32,
+      paddingTop: 12,
+      backgroundColor: theme.bg,
+    },
+    darkFooterContainer: {
+      backgroundColor: isDark ? theme.bg : '#050E24',
+    },
 
-  // Pagination Dots
-  paginationRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  dot: {
-    height: 8,
-    borderRadius: 4,
-  },
-  activeDot: {
-    width: 22,
-    backgroundColor: '#136DEC',
-  },
-  inactiveDot: {
-    width: 8,
-    backgroundColor: '#BFDBFE',
-  },
-  darkActiveDot: {
-    width: 22,
-    backgroundColor: '#2563EB',
-  },
-  darkInactiveDot: {
-    width: 8,
-    backgroundColor: '#1E293B',
-  },
+    // Pagination Dots
+    paginationRow: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      gap: 8,
+    },
+    dot: {
+      height: 8,
+      borderRadius: 4,
+    },
+    activeDot: {
+      width: 22,
+      backgroundColor: '#1769E0',
+    },
+    inactiveDot: {
+      width: 8,
+      backgroundColor: isDark ? theme.borderColor : '#BFDBFE',
+    },
+    darkActiveDot: {
+      width: 22,
+      backgroundColor: '#1769E0',
+    },
+    darkInactiveDot: {
+      width: 8,
+      backgroundColor: isDark ? theme.borderColor : '#1E293B',
+    },
 
-  // Next Button
-  nextButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: '#136DEC',
-    paddingVertical: 14,
-    paddingHorizontal: 26,
-    borderRadius: 24,
-    shadowColor: '#136DEC',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
-    shadowRadius: 8,
-    elevation: 4,
-  },
-  darkNextButton: {
-    backgroundColor: '#2563EB',
-    shadowColor: '#2563EB',
-  },
-  nextButtonText: {
-    fontSize: 15.5,
-    fontWeight: '700',
-    color: '#FFFFFF',
-    marginRight: 6,
-  },
-  nextArrow: {
-    fontSize: 16,
-    fontWeight: '700',
-    color: '#FFFFFF',
-  },
-});
+    // Next Button
+    nextButton: {
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      backgroundColor: '#1769E0',
+      paddingVertical: 14,
+      paddingHorizontal: 26,
+      borderRadius: 24,
+      shadowColor: '#1769E0',
+      shadowOffset: { width: 0, height: 4 },
+      shadowOpacity: 0.25,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+    darkNextButton: {
+      backgroundColor: '#1769E0',
+      shadowColor: '#1769E0',
+    },
+    nextButtonText: {
+      fontSize: 15.5,
+      fontWeight: '700',
+      color: '#FFFFFF',
+      marginRight: 6,
+    },
+    nextArrow: {
+      fontSize: 16,
+      fontWeight: '700',
+      color: '#FFFFFF',
+    },
+  });

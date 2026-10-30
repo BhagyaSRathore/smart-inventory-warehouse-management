@@ -335,7 +335,18 @@ export const deleteOrder = (id) =>
 
 export const getNotifications = async () => {
   const response = await apiRequest("/notifications");
-  return response.notifications || [];
+
+  console.log("Notifications API response:", response);
+
+  if (Array.isArray(response)) {
+    return response;
+  }
+
+  if (Array.isArray(response?.notifications)) {
+    return response.notifications;
+  }
+
+  return [];
 };
 
 export const getUnreadNotificationCount = async () => {

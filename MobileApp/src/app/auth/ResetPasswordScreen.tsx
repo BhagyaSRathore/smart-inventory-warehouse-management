@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -17,6 +17,7 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import API from '../../services/api';
 import apis from '../../services/endpoint';
 import CustomAlert from '../../components/CustomAlert';
+import { useAppTheme, ThemeColors } from '../../context/ThemeContext';
 
 type Props = {
   navigation: any;
@@ -25,6 +26,8 @@ type Props = {
 
 const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
   const insets = useSafeAreaInsets();
+  const { theme, isDark } = useAppTheme();
+  const styles = useMemo(() => getStyles(theme, isDark), [theme, isDark]);
   const email = route?.params?.email || '';
 
   const [newPassword, setNewPassword] = useState('');
@@ -120,7 +123,9 @@ const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
   if (isSuccess) {
     return (
       <View style={[styles.container, styles.successContainer]}>
-        <StatusBar barStyle="dark-content" />
+        <StatusBar
+          barStyle={isDark ? 'light-content' : 'dark-content'}
+        />
 
         <View style={styles.successCard}>
           <View style={styles.successIconCircle}>
@@ -156,7 +161,9 @@ const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       enabled={Platform.OS === 'ios'}
     >
-      <StatusBar barStyle="dark-content" />
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+      />
 
       <ScrollView
         style={styles.scrollView}
@@ -204,7 +211,7 @@ const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
                 passwordError ? styles.inputError : null,
               ]}
               placeholder="Enter at least 8 characters"
-              placeholderTextColor="#91A0B8"
+              placeholderTextColor={theme.placeholderText}
               value={newPassword}
               onChangeText={(text) => {
                 setNewPassword(text);
@@ -226,9 +233,9 @@ const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
               activeOpacity={0.7}
             >
               {showNewPassword ? (
-                <EyeOff size={21} color="#647899" />
+                <EyeOff size={21} color={theme.textSecondary} />
               ) : (
-                <Eye size={21} color="#647899" />
+                <Eye size={21} color={theme.textSecondary} />
               )}
             </TouchableOpacity>
           </View>
@@ -246,7 +253,7 @@ const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
                 confirmPasswordError ? styles.inputError : null,
               ]}
               placeholder="Re-enter your new password"
-              placeholderTextColor="#91A0B8"
+              placeholderTextColor={theme.placeholderText}
               value={confirmPassword}
               onChangeText={(text) => {
                 setConfirmPassword(text);
@@ -265,9 +272,9 @@ const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
               activeOpacity={0.7}
             >
               {showConfirmPassword ? (
-                <EyeOff size={21} color="#647899" />
+                <EyeOff size={21} color={theme.textSecondary} />
               ) : (
-                <Eye size={21} color="#647899" />
+                <Eye size={21} color={theme.textSecondary} />
               )}
             </TouchableOpacity>
           </View>
@@ -325,259 +332,262 @@ const ResetPasswordScreen: React.FC<Props> = ({ navigation, route }) => {
 
 export default ResetPasswordScreen;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FBFF',
-  },
-
-  scrollView: {
-    flex: 1,
-    backgroundColor: '#F8FBFF',
-  },
-
-  scrollContent: {
-    flexGrow: 1,
-    paddingHorizontal: 24,
-  },
-
-  /* HEADER */
-
-  header: {
-    alignItems: 'center',
-    marginBottom: 38,
-  },
-
-  logoBox: {
-    width: 88,
-    height: 88,
-    borderRadius: 24,
-    backgroundColor: '#EAF3FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-
-    shadowColor: '#1769E0',
-    shadowOffset: {
-      width: 0,
-      height: 5,
+const getStyles = (theme: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.bg,
     },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 4,
-  },
 
-  logo: {
-    width: 70,
-    height: 70,
-  },
-
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#10265A',
-    textAlign: 'center',
-  },
-
-  titleBlue: {
-    color: '#1769E0',
-  },
-
-  subtitle: {
-    marginTop: 5,
-    fontSize: 15,
-    color: '#647899',
-    textAlign: 'center',
-  },
-
-  /* FORM */
-
-  form: {
-    width: '100%',
-  },
-
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#243B64',
-    marginBottom: 8,
-    marginLeft: 2,
-  },
-
-  passwordContainer: {
-    position: 'relative',
-    justifyContent: 'center',
-    marginBottom: 16,
-  },
-
-  passwordInput: {
-    height: 54,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D4E3F8',
-    borderRadius: 14,
-    paddingHorizontal: 16,
-    paddingRight: 50,
-    fontSize: 15,
-    color: '#172554',
-
-    shadowColor: '#1769E0',
-    shadowOffset: {
-      width: 0,
-      height: 2,
+    scrollView: {
+      flex: 1,
+      backgroundColor: theme.bg,
     },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 1,
-  },
 
-  inputError: {
-    borderColor: '#EF4444',
-  },
-
-  fieldErrorText: {
-    color: '#EF4444',
-    fontSize: 13,
-    marginTop: -10,
-    marginBottom: 14,
-    marginLeft: 4,
-    fontWeight: '500',
-  },
-
-  eyeButton: {
-    position: 'absolute',
-    right: 15,
-    padding: 6,
-  },
-
-  /* UPDATE BUTTON */
-
-  updateButton: {
-    height: 54,
-    borderRadius: 15,
-    backgroundColor: '#1769E0',
-
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 10,
-
-    shadowColor: '#1769E0',
-    shadowOffset: {
-      width: 0,
-      height: 6,
+    scrollContent: {
+      flexGrow: 1,
+      paddingHorizontal: 24,
     },
-    shadowOpacity: 0.22,
-    shadowRadius: 10,
-    elevation: 4,
-  },
 
-  disabledButton: {
-    backgroundColor: '#8EB4EE',
-    shadowOpacity: 0.05,
-    elevation: 0,
-  },
+    /* HEADER */
 
-  updateText: {
-    color: '#FFFFFF',
-    fontSize: 17,
-    fontWeight: '700',
-  },
-
-  /* BACK TO LOGIN */
-
-  backRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 35,
-  },
-
-  backLabel: {
-    color: '#64748B',
-    fontSize: 14,
-  },
-
-  backButton: {
-    color: '#1769E0',
-    fontSize: 14,
-    fontWeight: '700',
-    marginLeft: 5,
-  },
-
-  /* SUCCESS STATE */
-
-  successContainer: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    paddingHorizontal: 24,
-  },
-
-  successCard: {
-    width: '100%',
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    paddingVertical: 36,
-    paddingHorizontal: 24,
-    alignItems: 'center',
-
-    shadowColor: '#1769E0',
-    shadowOffset: {
-      width: 0,
-      height: 8,
+    header: {
+      alignItems: 'center',
+      marginBottom: 38,
     },
-    shadowOpacity: 0.12,
-    shadowRadius: 16,
-    elevation: 6,
-  },
 
-  successIconCircle: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: '#EAF3FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 20,
-  },
+    logoBox: {
+      width: 88,
+      height: 88,
+      borderRadius: 24,
+      backgroundColor: isDark ? 'rgba(23, 105, 224, 0.15)' : '#EAF3FF',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
 
-  successTitle: {
-    fontSize: 24,
-    fontWeight: '800',
-    color: '#10265A',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-
-  successMessage: {
-    fontSize: 15,
-    color: '#647899',
-    textAlign: 'center',
-    lineHeight: 22,
-    marginBottom: 28,
-  },
-
-  backToLoginButton: {
-    width: '100%',
-    height: 52,
-    borderRadius: 14,
-    backgroundColor: '#1769E0',
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    shadowColor: '#1769E0',
-    shadowOffset: {
-      width: 0,
-      height: 5,
+      shadowColor: '#1769E0',
+      shadowOffset: {
+        width: 0,
+        height: 5,
+      },
+      shadowOpacity: 0.12,
+      shadowRadius: 10,
+      elevation: 4,
     },
-    shadowOpacity: 0.2,
-    shadowRadius: 8,
-    elevation: 4,
-  },
 
-  backToLoginText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
-});
+    logo: {
+      width: 70,
+      height: 70,
+    },
+
+    title: {
+      fontSize: 28,
+      fontWeight: '800',
+      color: theme.textPrimary,
+      textAlign: 'center',
+    },
+
+    titleBlue: {
+      color: '#1769E0',
+    },
+
+    subtitle: {
+      marginTop: 5,
+      fontSize: 15,
+      color: theme.textSecondary,
+      textAlign: 'center',
+    },
+
+    /* FORM */
+
+    form: {
+      width: '100%',
+    },
+
+    label: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.textSecondary,
+      marginBottom: 8,
+      marginLeft: 2,
+    },
+
+    passwordContainer: {
+      position: 'relative',
+      justifyContent: 'center',
+      marginBottom: 16,
+    },
+
+    passwordInput: {
+      height: 54,
+      backgroundColor: theme.inputBg,
+      borderWidth: 1,
+      borderColor: theme.inputBorder,
+      borderRadius: 14,
+      paddingHorizontal: 16,
+      paddingRight: 50,
+      fontSize: 15,
+      color: theme.textPrimary,
+
+      shadowColor: theme.shadowColor,
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.04,
+      shadowRadius: 5,
+      elevation: 1,
+    },
+
+    inputError: {
+      borderColor: '#EF4444',
+    },
+
+    fieldErrorText: {
+      color: '#EF4444',
+      fontSize: 13,
+      marginTop: -10,
+      marginBottom: 14,
+      marginLeft: 4,
+      fontWeight: '500',
+    },
+
+    eyeButton: {
+      position: 'absolute',
+      right: 15,
+      padding: 6,
+    },
+
+    /* UPDATE BUTTON */
+
+    updateButton: {
+      height: 54,
+      borderRadius: 15,
+      backgroundColor: '#1769E0',
+
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginTop: 10,
+
+      shadowColor: '#1769E0',
+      shadowOffset: {
+        width: 0,
+        height: 6,
+      },
+      shadowOpacity: 0.22,
+      shadowRadius: 10,
+      elevation: 4,
+    },
+
+    disabledButton: {
+      backgroundColor: isDark ? '#1E293B' : '#8EB4EE',
+      shadowOpacity: 0.05,
+      elevation: 0,
+    },
+
+    updateText: {
+      color: '#FFFFFF',
+      fontSize: 17,
+      fontWeight: '700',
+    },
+
+    /* BACK TO LOGIN */
+
+    backRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 35,
+    },
+
+    backLabel: {
+      color: theme.textSecondary,
+      fontSize: 14,
+    },
+
+    backButton: {
+      color: '#1769E0',
+      fontSize: 14,
+      fontWeight: '700',
+      marginLeft: 5,
+    },
+
+    /* SUCCESS STATE */
+
+    successContainer: {
+      justifyContent: 'center',
+      alignItems: 'center',
+      paddingHorizontal: 24,
+    },
+
+    successCard: {
+      width: '100%',
+      backgroundColor: theme.cardBg,
+      borderRadius: 24,
+      paddingVertical: 36,
+      paddingHorizontal: 24,
+      alignItems: 'center',
+      borderWidth: isDark ? 1 : 0,
+      borderColor: theme.borderColor,
+
+      shadowColor: theme.shadowColor,
+      shadowOffset: {
+        width: 0,
+        height: 8,
+      },
+      shadowOpacity: 0.12,
+      shadowRadius: 16,
+      elevation: 6,
+    },
+
+    successIconCircle: {
+      width: 80,
+      height: 80,
+      borderRadius: 40,
+      backgroundColor: isDark ? 'rgba(23, 105, 224, 0.15)' : '#EAF3FF',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 20,
+    },
+
+    successTitle: {
+      fontSize: 24,
+      fontWeight: '800',
+      color: theme.textPrimary,
+      textAlign: 'center',
+      marginBottom: 8,
+    },
+
+    successMessage: {
+      fontSize: 15,
+      color: theme.textSecondary,
+      textAlign: 'center',
+      lineHeight: 22,
+      marginBottom: 28,
+    },
+
+    backToLoginButton: {
+      width: '100%',
+      height: 52,
+      borderRadius: 14,
+      backgroundColor: '#1769E0',
+      alignItems: 'center',
+      justifyContent: 'center',
+
+      shadowColor: '#1769E0',
+      shadowOffset: {
+        width: 0,
+        height: 5,
+      },
+      shadowOpacity: 0.2,
+      shadowRadius: 8,
+      elevation: 4,
+    },
+
+    backToLoginText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '700',
+    },
+  });

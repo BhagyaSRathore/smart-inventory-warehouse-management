@@ -8,6 +8,7 @@ model User {
   name         String?
   phone        String?
   role         String          @default("staff")
+  fcmToken     String?
   stockMoves   StockMovement[]
   notifications Notification[]
   createdAt    TimestamptzString @default(now())
@@ -24,14 +25,15 @@ model Category {
 }
 
 model Supplier {
-  id           Int       @id @default(autoincrement())
-  name         String
-  email        String?
-  phone        String?
-  address      String?
-  products     Product[]
-  createdAt    TimestamptzString @default(now())
-  updatedAt   temporal.updatedAtString()
+  id             Int             @id @default(autoincrement())
+  name           String
+  email          String?
+  phone          String?
+  address        String?
+  products       Product[]
+  purchaseOrders PurchaseOrder[]
+  createdAt      TimestamptzString @default(now())
+  updatedAt      temporal.updatedAtString()
 }
 
 model Product {
@@ -49,23 +51,27 @@ model Product {
   supplierId   Int?
   category     Category?  @relation(fields: [categoryId], references: [id])
   supplier     Supplier?  @relation(fields: [supplierId], references: [id])
-  inventory    Inventory[]
-  orderItems   OrderItem[]
-  stockMoves   StockMovement[]
-  predictions  Prediction[]
-  createdAt    TimestamptzString @default(now())
-  updatedAt    temporal.updatedAtString()
+  inventory          Inventory[]
+  orderItems         OrderItem[]
+  purchaseOrderItems PurchaseOrderItem[]
+  salesOrderItems    SalesOrderItem[]
+  stockMoves         StockMovement[]
+  predictions        Prediction[]
+  createdAt          TimestamptzString @default(now())
+  updatedAt          temporal.updatedAtString()
 }
 
 model Warehouse {
-  id          Int         @id @default(autoincrement())
-  name        String
-  location    String?
-  racks       Rack[]
-  inventory   Inventory[]
-  stockMoves  StockMovement[]
-  createdAt   TimestamptzString @default(now())
-  updatedAt   temporal.updatedAtString()
+  id             Int             @id @default(autoincrement())
+  name           String
+  location       String?
+  racks          Rack[]
+  inventory      Inventory[]
+  stockMoves     StockMovement[]
+  purchaseOrders PurchaseOrder[]
+  salesOrders    SalesOrder[]
+  createdAt      TimestamptzString @default(now())
+  updatedAt      temporal.updatedAtString()
 }
 
 model Rack {
@@ -147,4 +153,89 @@ model Notification {
   createdAt TimestamptzString @default(now())
 
   user User? @relation(fields: [userId], references: [id])
+}
+
+model Customer {
+  id          Int               @id @default(autoincrement())
+  name        String
+  email       String?
+  phone       String?
+  address     String?
+  salesOrders SalesOrder[]
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
+}
+
+model PurchaseOrder {
+  id           Int                 @id @default(autoincrement())
+  orderNumber  String              @unique
+  supplierId   Int
+  warehouseId  Int
+  status       String              @default("PENDING")
+  subtotal     Decimal
+  tax          Decimal
+  total        Decimal
+  notes        String?
+  supplier     Supplier            @relation(fields: [supplierId], references: [id])
+  warehouse    Warehouse           @relation(fields: [warehouseId], references: [id])
+  items        PurchaseOrderItem[]
+  createdAt    TimestamptzString   @default(now())
+  updatedAt    temporal.updatedAtString()
+
+  @@index([orderNumber])
+  @@index([status])
+  @@index([supplierId])
+  @@index([warehouseId])
+  @@index([createdAt])
+}
+
+model PurchaseOrderItem {
+  id              Int           @id @default(autoincrement())
+  purchaseOrderId Int
+  productId       Int
+  quantity        Int
+  unitPrice       Decimal
+  total           Decimal
+  purchaseOrder   PurchaseOrder @relation(fields: [purchaseOrderId], references: [id])
+  product         Product       @relation(fields: [productId], references: [id])
+
+  @@index([purchaseOrderId])
+  @@index([productId])
+}
+
+model SalesOrder {
+  id          Int              @id @default(autoincrement())
+  orderNumber String           @unique
+  customerId  Int
+  warehouseId Int
+  status      String           @default("PENDING")
+  subtotal    Decimal
+  tax         Decimal
+  total       Decimal
+  notes       String?
+  customer    Customer         @relation(fields: [customerId], references: [id])
+  warehouse   Warehouse        @relation(fields: [warehouseId], references: [id])
+  items       SalesOrderItem[]
+  createdAt   TimestamptzString @default(now())
+  updatedAt   temporal.updatedAtString()
+
+  @@index([orderNumber])
+  @@index([status])
+  @@index([customerId])
+  @@index([warehouseId])
+  @@index([createdAt])
+}
+
+model SalesOrderItem {
+  id           Int        @id @default(autoincrement())
+  salesOrderId Int
+  productId    Int
+  quantity     Int
+  unitPrice    Decimal
+  total        Decimal
+  salesOrder   SalesOrder @relation(fields: [salesOrderId], references: [id])
+  product      Product    @relation(fields: [productId], references: [id])
+
+  @@index([salesOrderId])
+  @@index([productId])
 }
