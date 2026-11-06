@@ -1,6 +1,7 @@
 import bcrypt from "bcrypt";
 import { db } from "../db.ts";
 import jwt from "jsonwebtoken";
+import { normalizeRole, ROLES } from "../middleware/auth.middleware.js";
 
 export const getCurrentUser = async (req, res) => {
   try {
@@ -19,7 +20,7 @@ export const getCurrentUser = async (req, res) => {
         email: user.email,
         username: user.username,
         name: user.name,
-        role: user.role,
+        role: normalizeRole(user.role),
         phone: user.phone,
       },
     });
@@ -53,7 +54,7 @@ export const updateCurrentUser = async (req, res) => {
         email: updatedUser.email,
         username: updatedUser.username,
         name: updatedUser.name,
-        role: updatedUser.role,
+        role: normalizeRole(updatedUser.role),
         phone: updatedUser.phone,
       },
     });
@@ -128,7 +129,7 @@ export const register = async (req, res) => {
   name,
   phone,
   passwordHash,
-  role: role || "staff",
+  role: normalizeRole(role || "STAFF"),
 });
     res.status(201).json({
       message: "User registered successfully",
@@ -137,7 +138,7 @@ export const register = async (req, res) => {
         email: user.email,
         username: user.username,
         name: user.name,
-        role: user.role,
+        role: normalizeRole(user.role),
         phone: user.phone,
       },
     });
@@ -218,10 +219,12 @@ export const login = async (req, res) => {
       });
     }
 
+    const normalizedRole = normalizeRole(user.role);
+
     const token = jwt.sign(
       {
         userId: user.id,
-        role: user.role,
+        role: normalizedRole,
       },
       process.env.JWT_SECRET,
       {
@@ -237,7 +240,7 @@ export const login = async (req, res) => {
         email: user.email,
         username: user.username,
         name: user.name,
-        role: user.role,
+        role: normalizedRole,
         phone: user.phone,
       },
     });
@@ -344,5 +347,70 @@ export const resetPassword = async (req, res) => {
     return res.status(500).json({
       message: "Failed to reset password",
     });
+  }
+};
+
+export const getAllUsers = async (req, res) => {
+  try {
+    const users = await db.orm.public.User.all();
+    const sanitized = users.map((u) => ({
+      id: u.id,
+      email: u.email,
+      username: u.username,
+      name: u.name,
+      role: normalizeRole(u.role),
+      phone: u.phone,
+      createdAt: u.createdAt,
+    }));
+
+    return res.json({
+      message: "Users fetched successfully",
+      users: sanitized,
+    });
+  } catch (error) {
+    console.error("Failed to fetch users:", error);
+    return res.status(500).json({ message: "Failed to fetch users" });
+  }
+};
+
+export const updateUserRole = async (req, res) => {
+  try {
+    const targetUserId = Number(req.params.id);
+    const { role } = req.body;
+
+    if (!role) {
+      return res.status(400).json({ message: "Role is required" });
+    }
+
+    const normalizedRole = normalizeRole(role);
+    if (![ROLES.ADMIN, ROLES.WAREHOUSE_MANAGER, ROLES.STAFF].includes(normalizedRole)) {
+      return res.status(400).json({
+        message: "Invalid role. Must be ADMIN, WAREHOUSE_MANAGER, or STAFF",
+      });
+    }
+
+    const existing = await db.orm.public.User.first({ id: targetUserId });
+    if (!existing) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const updated = await db.orm.public.User.where({ id: targetUserId }).update({
+      role: normalizedRole,
+    });
+
+    return res.json({
+      message: "User role updated successfully",
+      user: {
+        id: updated.id,
+        email: updated.email,
+        username: updated.username,
+        name: updated.name,
+        role: normalizeRole(updated.role),
+        phone: updated.phone,
+      },
+    });
+  } catch (error) {
+    console.error("Failed to update user role:", error);
+    return res.status(500).json({ message: "Failed to update user role" });
   }
 };

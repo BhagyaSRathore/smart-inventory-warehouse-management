@@ -1,6 +1,16 @@
 import express from "express";
-import { register, login, getCurrentUser, updateCurrentUser, changePassword, forgotPassword, resetPassword } from "../controllers/auth.controller.js";
-import { authenticate } from "../middleware/auth.middleware.js";
+import {
+  register,
+  login,
+  getCurrentUser,
+  updateCurrentUser,
+  changePassword,
+  forgotPassword,
+  resetPassword,
+  getAllUsers,
+  updateUserRole,
+} from "../controllers/auth.controller.js";
+import { authenticate, requireRole, ROLES } from "../middleware/auth.middleware.js";
 
 const router = express.Router();
 
@@ -18,6 +28,10 @@ router.get("/protected", authenticate, (req, res) => {
 router.get("/me", authenticate, getCurrentUser);
 router.put("/me", authenticate, updateCurrentUser);
 router.patch("/change-password", authenticate, changePassword);
+
+// Administrative User and Role management (ADMIN only)
+router.get("/users", authenticate, requireRole(ROLES.ADMIN), getAllUsers);
+router.patch("/users/:id/role", authenticate, requireRole(ROLES.ADMIN), updateUserRole);
 
 router.post("/register", register);
 router.post("/login", login);

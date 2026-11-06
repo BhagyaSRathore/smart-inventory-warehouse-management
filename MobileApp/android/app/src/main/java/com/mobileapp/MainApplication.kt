@@ -1,6 +1,9 @@
 package com.mobileapp
 
 import android.app.Application
+import android.app.NotificationChannel
+import android.app.NotificationManager
+import android.os.Build
 import com.facebook.react.PackageList
 import com.facebook.react.ReactApplication
 import com.facebook.react.ReactHost
@@ -22,6 +25,28 @@ class MainApplication : Application(), ReactApplication {
 
   override fun onCreate() {
     super.onCreate()
+    createNotificationChannel()
+    try {
+      System.loadLibrary("VisionCameraBarcodeScanner")
+    } catch (e: Throwable) {
+      android.util.Log.e("MainApplication", "Failed to load VisionCameraBarcodeScanner: ${e.message}")
+    }
     loadReactNative(this)
+  }
+
+  private fun createNotificationChannel() {
+    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+      val channelId = "smart_inventory_channel"
+      val channelName = "Smart Inventory Alerts"
+      val channelDescription = "Critical alerts for inventory thresholds and restock events"
+      val importance = NotificationManager.IMPORTANCE_HIGH
+      val channel = NotificationChannel(channelId, channelName, importance).apply {
+        description = channelDescription
+        enableLights(true)
+        enableVibration(true)
+      }
+      val notificationManager = getSystemService(NotificationManager::class.java)
+      notificationManager?.createNotificationChannel(channel)
+    }
   }
 }
