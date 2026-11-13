@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useMemo } from 'react';
 import {
   View,
   Text,
@@ -18,6 +18,7 @@ import { RootState } from '../../store/store';
 import { logout } from '../../store/slices/authSlice';
 import API from '../../services/api';
 import apis from '../../services/endpoint';
+import { useAppTheme, ThemeColors } from '../../context/ThemeContext';
 
 const { width, height } = Dimensions.get('window');
 
@@ -26,6 +27,9 @@ type Props = {
 };
 
 const SplashScreen: React.FC<Props> = ({ navigation }) => {
+  const { theme, isDark } = useAppTheme();
+  const styles = useMemo(() => getStyles(theme, isDark), [theme, isDark]);
+
   // Animation values
   const logoFade = useRef(new Animated.Value(0)).current;
   const logoScale = useRef(new Animated.Value(0.8)).current;
@@ -48,12 +52,19 @@ const SplashScreen: React.FC<Props> = ({ navigation }) => {
     (state: RootState) => state.auth.isAuthenticated,
   );
 
+  // Refs so the progress-animation callback always reads current Redux values
+  // even though the useEffect dependency array is empty (runs once on mount).
+  const isAuthenticatedRef = useRef(isAuthenticated);
+  const tokenRef = useRef(token);
+  useEffect(() => { isAuthenticatedRef.current = isAuthenticated; }, [isAuthenticated]);
+  useEffect(() => { tokenRef.current = token; }, [token]);
+
   const handleSplashComplete = async () => {
     try {
       const hasSeenOnboarding = await AsyncStorage.getItem('hasSeenOnboarding');
 
-      // If token and authenticated flag exist, validate with backend /api/auth/me
-      if (isAuthenticated && token) {
+      // Read live values from refs so we don't act on stale closure data
+      if (isAuthenticatedRef.current && tokenRef.current) {
         try {
           await API.get(apis.me);
           navigation?.replace('Dashboard');
@@ -170,7 +181,9 @@ const SplashScreen: React.FC<Props> = ({ navigation }) => {
 
   return (
     <SafeAreaView style={styles.safeArea}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+      />
 
       {/* Background Soft Glow Effect */}
       <View style={styles.bgCircleTopLeft} />
@@ -273,7 +286,7 @@ const SplashScreen: React.FC<Props> = ({ navigation }) => {
           <Image
             source={require('../../assets/images/warehouse-illustration.png')}
             style={styles.warehouseImage}
-            resizeMode="cover"
+            resizeMode="contain"
           />
         </Animated.View>
 
@@ -311,162 +324,165 @@ const SplashScreen: React.FC<Props> = ({ navigation }) => {
 
 export default SplashScreen;
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-    backgroundColor: '#F8FBFF',
-  },
-  container: {
-    flex: 1,
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    paddingVertical: Platform.OS === 'ios' ? 12 : 20,
-    backgroundColor: '#FFFFFF',
-  },
+const getStyles = (theme: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    safeArea: {
+      flex: 1,
+      backgroundColor: theme.bg,
+    },
+    container: {
+      flex: 1,
+      justifyContent: 'space-between',
+      alignItems: 'center',
+      paddingVertical: Platform.OS === 'ios' ? 12 : 20,
+      backgroundColor: 'transparent',
+    },
 
-  // Soft Ambient Background Shapes
-  bgCircleTopLeft: {
-    position: 'absolute',
-    top: -60,
-    left: -60,
-    width: 220,
-    height: 220,
-    borderRadius: 110,
-    backgroundColor: '#E8F2FF',
-    opacity: 0.6,
-  },
-  bgCircleTopRight: {
-    position: 'absolute',
-    top: -40,
-    right: -50,
-    width: 200,
-    height: 200,
-    borderRadius: 100,
-    backgroundColor: '#EDF5FF',
-    opacity: 0.5,
-  },
+    // Soft Ambient Background Shapes
+    bgCircleTopLeft: {
+      position: 'absolute',
+      top: -60,
+      left: -60,
+      width: 220,
+      height: 220,
+      borderRadius: 110,
+      backgroundColor: isDark ? 'rgba(23, 105, 224, 0.08)' : '#E8F2FF',
+      opacity: isDark ? 0.3 : 0.6,
+    },
+    bgCircleTopRight: {
+      position: 'absolute',
+      top: -40,
+      right: -50,
+      width: 200,
+      height: 200,
+      borderRadius: 100,
+      backgroundColor: isDark ? 'rgba(23, 105, 224, 0.06)' : '#EDF5FF',
+      opacity: isDark ? 0.25 : 0.5,
+    },
 
-  // Top Section
-  topSection: {
-    alignItems: 'center',
-    width: '100%',
-    paddingTop: 10,
-  },
-  logoContainer: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 4,
-  },
-  logoImage: {
-    width: 140,
-    height: 95,
-  },
+    // Top Section
+    topSection: {
+      alignItems: 'center',
+      width: '100%',
+      paddingTop: 10,
+    },
+    logoContainer: {
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 4,
+    },
+    logoImage: {
+      width: 140,
+      height: 95,
+    },
 
-  // Title
-  titleContainer: {
-    alignItems: 'center',
-    marginTop: 2,
-  },
-  title: {
-    fontSize: 28,
-    fontWeight: '800',
-    color: '#0F1E36',
-    letterSpacing: -0.4,
-  },
-  titleHighlight: {
-    color: '#136DEC',
-  },
-  subtitle: {
-    marginTop: 5,
-    fontSize: 13.5,
-    fontWeight: '600',
-    color: '#6A7D93',
-    letterSpacing: 1.4,
-  },
+    // Title
+    titleContainer: {
+      alignItems: 'center',
+      marginTop: 2,
+    },
+    title: {
+      fontSize: 28,
+      fontWeight: '800',
+      color: theme.textPrimary,
+      letterSpacing: -0.4,
+    },
+    titleHighlight: {
+      color: '#1769E0',
+    },
+    subtitle: {
+      marginTop: 5,
+      fontSize: 13.5,
+      fontWeight: '600',
+      color: theme.textSecondary,
+      letterSpacing: 1.4,
+    },
 
-  // Feature Cards Row
-  featuresRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: '85%',
-    marginTop: 22,
-    gap: 28,
-  },
-  featureItem: {
-    alignItems: 'center',
-  },
-  featureCard: {
-    width: 54,
-    height: 54,
-    borderRadius: 17,
-    backgroundColor: '#EBF3FE',
-    alignItems: 'center',
-    justifyContent: 'center',
-    shadowColor: '#136DEC',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  featureIconImage: {
-    width: 28,
-    height: 28,
-  },
-  featureLabel: {
-    marginTop: 7,
-    fontSize: 12.5,
-    fontWeight: '600',
-    color: '#1E293B',
-  },
+    // Feature Cards Row
+    featuresRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      width: '85%',
+      marginTop: 22,
+      gap: 28,
+    },
+    featureItem: {
+      alignItems: 'center',
+    },
+    featureCard: {
+      width: 54,
+      height: 54,
+      borderRadius: 17,
+      // Dark mode: use the card surface color (#1E293B) so blue icons are
+      // visible against it. Light mode: keep the existing soft blue tint.
+      backgroundColor: isDark ? theme.cardBg : '#EBF3FE',
+      alignItems: 'center',
+      justifyContent: 'center',
+      shadowColor: theme.shadowColor,
+      shadowOffset: { width: 0, height: 3 },
+      shadowOpacity: 0.08,
+      shadowRadius: 6,
+      elevation: 2,
+      borderWidth: 1,
+      borderColor: isDark ? 'rgba(255, 255, 255, 0.08)' : 'rgba(23, 105, 224, 0.15)',
+    },
+    featureIconImage: {
+      width: 32,
+      height: 32,
+    },
+    featureLabel: {
+      marginTop: 7,
+      fontSize: 12.5,
+      fontWeight: '600',
+      color: theme.textPrimary,
+    },
 
-  // Middle Section (Warehouse Image)
-  illustrationContainer: {
-    width: '100%',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginVertical: 4,
-    overflow: 'hidden',
-  },
-  warehouseImage: {
-    width: width,
-    height: height * 0.32,
-    maxHeight: 250,
-  },
+    // Middle Section (Warehouse Image)
+    illustrationContainer: {
+      width: '100%',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginVertical: 4,
+    },
+    warehouseImage: {
+      width: width,
+      height: Math.min(height * 0.32, 250),
+    },
 
-  // Bottom Section
-  bottomSection: {
-    alignItems: 'center',
-    width: '100%',
-    paddingBottom: Platform.OS === 'ios' ? 14 : 22,
-  },
-  mottoText: {
-    fontSize: 16.5,
-    fontWeight: '600',
-    color: '#1E293B',
-    textAlign: 'center',
-  },
-  mottoHighlight: {
-    marginTop: 3,
-    fontSize: 17.5,
-    fontWeight: '700',
-    color: '#136DEC',
-    textAlign: 'center',
-  },
+    // Bottom Section
+    bottomSection: {
+      alignItems: 'center',
+      width: '100%',
+      paddingBottom: Platform.OS === 'ios' ? 14 : 22,
+    },
+    mottoText: {
+      fontSize: 16.5,
+      fontWeight: '600',
+      color: theme.textPrimary,
+      textAlign: 'center',
+    },
+    mottoHighlight: {
+      marginTop: 3,
+      fontSize: 17.5,
+      fontWeight: '700',
+      color: '#1769E0',
+      textAlign: 'center',
+    },
 
-  // Pagination Indicator
-  progressBar: {
-    width: '72%',
-    height: 5,
-    borderRadius: 10,
-    backgroundColor: '#DCE9FA',
-    overflow: 'hidden',
-    marginTop: 18,
-  },
+    // Pagination Indicator
+    progressBar: {
+      width: '72%',
+      height: 5,
+      borderRadius: 10,
+      backgroundColor: isDark ? theme.borderColor : '#DCE9FA',
+      overflow: 'hidden',
+      marginTop: 18,
+    },
 
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#136DEC',
-    borderRadius: 10,
-  },
-});
+    progressFill: {
+      height: '100%',
+      backgroundColor: '#1769E0',
+      borderRadius: 10,
+    },
+  });

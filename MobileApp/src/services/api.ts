@@ -3,7 +3,7 @@ import {store} from '../store/store';
 import {logout} from '../store/slices/authSlice';
 
 const API = axios.create({
-  baseURL: 'http://127.0.0.1:5000/api',
+  baseURL: 'http://192.168.31.38:5000/api',
   headers: {
     'Content-Type': 'application/json',
   },

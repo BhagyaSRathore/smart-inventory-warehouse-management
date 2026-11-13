@@ -74,10 +74,30 @@ export const createProduct = async (req, res) => {
 export const getProducts = async (req, res) => {
   try {
     const products = await db.orm.public.Product.all();
+    const inventories = await db.orm.public.Inventory.all();
+    const categories = await db.orm.public.Category.all();
+    const suppliers = await db.orm.public.Supplier.all();
+
+    const categoryMap = {};
+    categories.forEach(c => { categoryMap[c.id] = c; });
+
+    const supplierMap = {};
+    suppliers.forEach(s => { supplierMap[s.id] = s; });
+
+    const enrichedProducts = products.map(product => {
+      const prodInvs = inventories.filter(inv => inv.productId === product.id);
+      const totalStock = prodInvs.reduce((sum, inv) => sum + (inv.quantity || 0), 0);
+      return {
+        ...product,
+        totalStock,
+        category: product.categoryId ? categoryMap[product.categoryId] || null : null,
+        supplier: product.supplierId ? supplierMap[product.supplierId] || null : null,
+      };
+    });
 
     res.json({
       message: "Products fetched successfully",
-      products,
+      products: enrichedProducts,
     });
   } catch (error) {
     console.error(error);
@@ -102,9 +122,70 @@ export const getProduct = async (req, res) => {
       });
     }
 
+    // Get inventory information for this product
+    const inventories = await db.orm.public.Inventory.where({
+      productId: product.id,
+    }).all();
+
+    // Enrich with warehouse and rack details
+    const inventoryDetails = await Promise.all(
+      inventories.map(async (inv) => {
+        const warehouse = await db.orm.public.Warehouse.first({
+          id: inv.warehouseId,
+        });
+        
+        let rack = null;
+        if (inv.rackId) {
+          rack = await db.orm.public.Rack.first({
+            id: inv.rackId,
+          });
+        }
+
+        return {
+          inventoryId: inv.id,
+          quantity: inv.quantity,
+          warehouse: warehouse ? {
+            id: warehouse.id,
+            name: warehouse.name,
+            location: warehouse.location,
+          } : null,
+          rack: rack ? {
+            id: rack.id,
+            name: rack.name,
+          } : null,
+        };
+      })
+    );
+
+    // Get category and supplier details
+    let category = null;
+    if (product.categoryId) {
+      category = await db.orm.public.Category.first({
+        id: product.categoryId,
+      });
+    }
+
+    let supplier = null;
+    if (product.supplierId) {
+      supplier = await db.orm.public.Supplier.first({
+        id: product.supplierId,
+      });
+    }
+
+    const totalStock = inventories.reduce((sum, inv) => sum + (inv.quantity || 0), 0);
+
     res.json({
       message: "Product fetched successfully",
-      product,
+      product: {
+        ...product,
+        totalStock,
+        category: category ? { id: category.id, name: category.name } : null,
+        supplier: supplier ? { id: supplier.id, name: supplier.name } : null,
+      },
+      inventory: {
+        totalStock,
+        locations: inventoryDetails,
+      },
     });
   } catch (error) {
     console.error(error);
@@ -125,9 +206,15 @@ export const getProductByBarcode = async (req, res) => {
       });
     }
 
-    const product = await db.orm.public.Product.first({
+    let product = await db.orm.public.Product.first({
       barcode,
     });
+
+    if (!product) {
+      product = await db.orm.public.Product.first({
+        sku: barcode,
+      });
+    }
 
     if (!product) {
       return res.status(404).json({
