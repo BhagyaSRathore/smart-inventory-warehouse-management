@@ -10,7 +10,11 @@ app = FastAPI(
 
 @app.get("/health")
 def health() -> dict[str, str]:
-    return {"status": "ok"}
+    return {
+        "status": "healthy",
+        "service": "Smart Inventory ML Service",
+        "version": "1.0.0"
+    }
 
 
 app.include_router(predictions.router)

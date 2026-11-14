@@ -13,6 +13,8 @@ model User {
   notifications Notification[]
   createdAt    TimestamptzString @default(now())
   updatedAt    temporal.updatedAtString()
+
+  @@map("app_user")
 }
 
 model Category {

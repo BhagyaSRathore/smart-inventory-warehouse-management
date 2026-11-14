@@ -1,11 +1,23 @@
 -- Smart Inventory System Database Schema for Supabase
 -- Run this in Supabase SQL Editor
 
--- Enable UUID extension
-CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+-- Drop existing tables if they exist (in correct order due to foreign keys)
+DROP TABLE IF EXISTS "prediction" CASCADE;
+DROP TABLE IF EXISTS "notification" CASCADE;
+DROP TABLE IF EXISTS "orderItem" CASCADE;
+DROP TABLE IF EXISTS "order" CASCADE;
+DROP TABLE IF EXISTS "stockMovement" CASCADE;
+DROP TABLE IF EXISTS "inventory" CASCADE;
+DROP TABLE IF EXISTS "product" CASCADE;
+DROP TABLE IF EXISTS "rack" CASCADE;
+DROP TABLE IF EXISTS "warehouse" CASCADE;
+DROP TABLE IF EXISTS "customer" CASCADE;
+DROP TABLE IF EXISTS "supplier" CASCADE;
+DROP TABLE IF EXISTS "category" CASCADE;
+DROP TABLE IF EXISTS "app_user" CASCADE;
 
--- Users table
-CREATE TABLE IF NOT EXISTS "user" (
+-- Users table (renamed to avoid PostgreSQL reserved keyword)
+CREATE TABLE "app_user" (
   "id" SERIAL PRIMARY KEY,
   "email" TEXT UNIQUE NOT NULL,
   "username" TEXT UNIQUE NOT NULL,
@@ -19,7 +31,7 @@ CREATE TABLE IF NOT EXISTS "user" (
 );
 
 -- Categories table
-CREATE TABLE IF NOT EXISTS "category" (
+CREATE TABLE "category" (
   "id" SERIAL PRIMARY KEY,
   "name" TEXT NOT NULL,
   "description" TEXT,
@@ -28,7 +40,18 @@ CREATE TABLE IF NOT EXISTS "category" (
 );
 
 -- Suppliers table
-CREATE TABLE IF NOT EXISTS "supplier" (
+CREATE TABLE "supplier" (
+  "id" SERIAL PRIMARY KEY,
+  "name" TEXT NOT NULL,
+  "email" TEXT,
+  "phone" TEXT,
+  "address" TEXT,
+  "createdAt" TIMESTAMPTZ DEFAULT NOW() NOT NULL,
+  "updatedAt" TIMESTAMPTZ DEFAULT NOW() NOT NULL
+);
+
+-- Customers table
+CREATE TABLE "customer" (
   "id" SERIAL PRIMARY KEY,
   "name" TEXT NOT NULL,
   "email" TEXT,
@@ -39,7 +62,7 @@ CREATE TABLE IF NOT EXISTS "supplier" (
 );
 
 -- Warehouses table
-CREATE TABLE IF NOT EXISTS "warehouse" (
+CREATE TABLE "warehouse" (
   "id" SERIAL PRIMARY KEY,
   "name" TEXT NOT NULL,
   "location" TEXT,
@@ -48,7 +71,7 @@ CREATE TABLE IF NOT EXISTS "warehouse" (
 );
 
 -- Racks table
-CREATE TABLE IF NOT EXISTS "rack" (
+CREATE TABLE "rack" (
   "id" SERIAL PRIMARY KEY,
   "name" TEXT NOT NULL,
   "warehouseId" INTEGER NOT NULL REFERENCES "warehouse"("id") ON DELETE CASCADE,
@@ -57,7 +80,7 @@ CREATE TABLE IF NOT EXISTS "rack" (
 );
 
 -- Products table
-CREATE TABLE IF NOT EXISTS "product" (
+CREATE TABLE "product" (
   "id" SERIAL PRIMARY KEY,
   "name" TEXT NOT NULL,
   "sku" TEXT UNIQUE NOT NULL,
@@ -73,7 +96,7 @@ CREATE TABLE IF NOT EXISTS "product" (
 );
 
 -- Inventory table
-CREATE TABLE IF NOT EXISTS "inventory" (
+CREATE TABLE "inventory" (
   "id" SERIAL PRIMARY KEY,
   "productId" INTEGER NOT NULL REFERENCES "product"("id") ON DELETE CASCADE,
   "warehouseId" INTEGER NOT NULL REFERENCES "warehouse"("id") ON DELETE CASCADE,
@@ -85,7 +108,7 @@ CREATE TABLE IF NOT EXISTS "inventory" (
 );
 
 -- Stock Movements table
-CREATE TABLE IF NOT EXISTS "stockMovement" (
+CREATE TABLE "stockMovement" (
   "id" SERIAL PRIMARY KEY,
   "productId" INTEGER NOT NULL REFERENCES "product"("id"),
   "warehouseId" INTEGER NOT NULL REFERENCES "warehouse"("id"),
@@ -94,12 +117,12 @@ CREATE TABLE IF NOT EXISTS "stockMovement" (
   "type" TEXT NOT NULL,
   "referenceNumber" TEXT,
   "notes" TEXT,
-  "performedBy" INTEGER REFERENCES "user"("id"),
+  "performedBy" INTEGER REFERENCES "app_user"("id"),
   "createdAt" TIMESTAMPTZ DEFAULT NOW() NOT NULL
 );
 
 -- Orders table
-CREATE TABLE IF NOT EXISTS "order" (
+CREATE TABLE "order" (
   "id" SERIAL PRIMARY KEY,
   "orderNumber" TEXT UNIQUE NOT NULL,
   "status" TEXT DEFAULT 'pending' NOT NULL,
@@ -108,28 +131,17 @@ CREATE TABLE IF NOT EXISTS "order" (
 );
 
 -- Order Items table
-CREATE TABLE IF NOT EXISTS "orderItem" (
+CREATE TABLE "orderItem" (
   "id" SERIAL PRIMARY KEY,
   "orderId" INTEGER NOT NULL REFERENCES "order"("id") ON DELETE CASCADE,
   "productId" INTEGER NOT NULL REFERENCES "product"("id"),
   "quantity" INTEGER NOT NULL
 );
 
--- Customers table
-CREATE TABLE IF NOT EXISTS "customer" (
-  "id" SERIAL PRIMARY KEY,
-  "name" TEXT NOT NULL,
-  "email" TEXT,
-  "phone" TEXT,
-  "address" TEXT,
-  "createdAt" TIMESTAMPTZ DEFAULT NOW() NOT NULL,
-  "updatedAt" TIMESTAMPTZ DEFAULT NOW() NOT NULL
-);
-
 -- Notifications table
-CREATE TABLE IF NOT EXISTS "notification" (
+CREATE TABLE "notification" (
   "id" SERIAL PRIMARY KEY,
-  "userId" INTEGER REFERENCES "user"("id") ON DELETE SET NULL,
+  "userId" INTEGER REFERENCES "app_user"("id") ON DELETE SET NULL,
   "type" TEXT NOT NULL,
   "title" TEXT NOT NULL,
   "message" TEXT NOT NULL,
@@ -138,7 +150,7 @@ CREATE TABLE IF NOT EXISTS "notification" (
 );
 
 -- Predictions table (for ML)
-CREATE TABLE IF NOT EXISTS "prediction" (
+CREATE TABLE "prediction" (
   "id" SERIAL PRIMARY KEY,
   "productId" INTEGER NOT NULL REFERENCES "product"("id"),
   "predictionData" JSONB,
@@ -146,14 +158,14 @@ CREATE TABLE IF NOT EXISTS "prediction" (
 );
 
 -- Create indexes for better performance
-CREATE INDEX IF NOT EXISTS "idx_inventory_product" ON "inventory"("productId");
-CREATE INDEX IF NOT EXISTS "idx_inventory_warehouse" ON "inventory"("warehouseId");
-CREATE INDEX IF NOT EXISTS "idx_stockMovement_product" ON "stockMovement"("productId");
-CREATE INDEX IF NOT EXISTS "idx_stockMovement_warehouse" ON "stockMovement"("warehouseId");
-CREATE INDEX IF NOT EXISTS "idx_stockMovement_createdAt" ON "stockMovement"("createdAt");
-CREATE INDEX IF NOT EXISTS "idx_order_status" ON "order"("status");
-CREATE INDEX IF NOT EXISTS "idx_notification_userId" ON "notification"("userId");
-CREATE INDEX IF NOT EXISTS "idx_rack_warehouse" ON "rack"("warehouseId");
+CREATE INDEX "idx_inventory_product" ON "inventory"("productId");
+CREATE INDEX "idx_inventory_warehouse" ON "inventory"("warehouseId");
+CREATE INDEX "idx_stockMovement_product" ON "stockMovement"("productId");
+CREATE INDEX "idx_stockMovement_warehouse" ON "stockMovement"("warehouseId");
+CREATE INDEX "idx_stockMovement_createdAt" ON "stockMovement"("createdAt");
+CREATE INDEX "idx_order_status" ON "order"("status");
+CREATE INDEX "idx_notification_userId" ON "notification"("userId");
+CREATE INDEX "idx_rack_warehouse" ON "rack"("warehouseId");
 
 -- Success message
-SELECT 'Database schema created successfully!' as message;
+SELECT 'Database schema created successfully! User table is named: app_user' as message;

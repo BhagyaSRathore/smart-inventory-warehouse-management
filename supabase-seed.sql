@@ -1,47 +1,69 @@
 -- Seed data for Smart Inventory System
 -- Run this AFTER running supabase-schema.sql
 
+-- Clear existing data (in correct order due to foreign keys)
+DELETE FROM "orderItem";
+DELETE FROM "order";
+DELETE FROM "stockMovement";
+DELETE FROM "inventory";
+DELETE FROM "product";
+DELETE FROM "rack";
+DELETE FROM "warehouse";
+DELETE FROM "customer";
+DELETE FROM "supplier";
+DELETE FROM "category";
+DELETE FROM "app_user";
+DELETE FROM "notification";
+DELETE FROM "prediction";
+
+-- Reset sequences
+ALTER SEQUENCE app_user_id_seq RESTART WITH 1;
+ALTER SEQUENCE category_id_seq RESTART WITH 1;
+ALTER SEQUENCE supplier_id_seq RESTART WITH 1;
+ALTER SEQUENCE customer_id_seq RESTART WITH 1;
+ALTER SEQUENCE warehouse_id_seq RESTART WITH 1;
+ALTER SEQUENCE rack_id_seq RESTART WITH 1;
+ALTER SEQUENCE product_id_seq RESTART WITH 1;
+ALTER SEQUENCE inventory_id_seq RESTART WITH 1;
+ALTER SEQUENCE "stockMovement_id_seq" RESTART WITH 1;
+ALTER SEQUENCE order_id_seq RESTART WITH 1;
+ALTER SEQUENCE "orderItem_id_seq" RESTART WITH 1;
+
 -- Insert admin user (password: admin123 - bcrypt hashed)
-INSERT INTO "user" ("email", "username", "password", "name", "role", "phone") VALUES
-('admin@inventory.com', 'admin', '$2b$10$rQYGhZ8vZ3vZ3vZ3vZ3vZeK5KqH5KqH5KqH5KqH5KqH5KqH5KqH5K', 'Admin User', 'ADMIN', '1234567890')
-ON CONFLICT (email) DO NOTHING;
+INSERT INTO "app_user" ("email", "username", "password", "name", "role", "phone") VALUES
+('admin@inventory.com', 'admin', '$2b$10$rQYGhZ8vZ3vZ3vZ3vZ3vZeK5KqH5KqH5KqH5KqH5KqH5KqH5KqH5K', 'Admin User', 'ADMIN', '1234567890');
 
 -- Insert categories
 INSERT INTO "category" ("name", "description") VALUES
 ('Electronics', 'Electronic devices and accessories'),
 ('Furniture', 'Office and home furniture'),
 ('Stationery', 'Office supplies and stationery'),
-('Hardware', 'Computer hardware and peripherals')
-ON CONFLICT DO NOTHING;
+('Hardware', 'Computer hardware and peripherals');
 
 -- Insert suppliers
 INSERT INTO "supplier" ("name", "email", "phone", "address") VALUES
 ('Tech Supplies Inc', 'contact@techsupplies.com', '+1-555-0100', '123 Tech Street, Silicon Valley, CA 94025'),
 ('Office World', 'sales@officeworld.com', '+1-555-0200', '456 Business Ave, New York, NY 10001'),
-('Global Electronics', 'info@globalelec.com', '+1-555-0300', '789 Market St, San Francisco, CA 94103')
-ON CONFLICT DO NOTHING;
+('Global Electronics', 'info@globalelec.com', '+1-555-0300', '789 Market St, San Francisco, CA 94103');
 
 -- Insert warehouses
 INSERT INTO "warehouse" ("name", "location") VALUES
 ('Main Warehouse', 'New York, NY'),
 ('West Coast Warehouse', 'Los Angeles, CA'),
-('Central Warehouse', 'Chicago, IL')
-ON CONFLICT DO NOTHING;
+('Central Warehouse', 'Chicago, IL');
 
 -- Insert racks for Main Warehouse
 INSERT INTO "rack" ("name", "warehouseId") VALUES
 ('A1', 1),
 ('A2', 1),
 ('B1', 1),
-('B2', 1)
-ON CONFLICT DO NOTHING;
+('B2', 1);
 
 -- Insert racks for West Coast Warehouse
 INSERT INTO "rack" ("name", "warehouseId") VALUES
 ('A1', 2),
 ('A2', 2),
-('B1', 2)
-ON CONFLICT DO NOTHING;
+('B1', 2);
 
 -- Insert products
 INSERT INTO "product" ("name", "sku", "description", "categoryId", "supplierId", "price", "reorderLevel", "safetyStock", "barcode") VALUES
@@ -52,8 +74,7 @@ INSERT INTO "product" ("name", "sku", "description", "categoryId", "supplierId",
 ('Standing Desk', 'DESK-STD-001', 'Adjustable height standing desk', 2, 2, 599.99, 5, 2, '5678901234567'),
 ('Ergonomic Office Chair', 'CHR-ERG-001', 'Premium ergonomic chair', 2, 2, 299.99, 10, 5, '6789012345678'),
 ('A4 Notebook Pack', 'NOTE-A4-10', 'Pack of 10 A4 notebooks', 3, 2, 12.99, 50, 30, '7890123456789'),
-('Ballpoint Pen Set', 'PEN-BP-12', 'Set of 12 ballpoint pens', 3, 2, 5.99, 100, 50, '8901234567890')
-ON CONFLICT (sku) DO NOTHING;
+('Ballpoint Pen Set', 'PEN-BP-12', 'Set of 12 ballpoint pens', 3, 2, 5.99, 100, 50, '8901234567890');
 
 -- Insert inventory
 INSERT INTO "inventory" ("productId", "warehouseId", "rackId", "quantity") VALUES
@@ -66,22 +87,19 @@ INSERT INTO "inventory" ("productId", "warehouseId", "rackId", "quantity") VALUE
 (6, 1, 3, 20),
 (6, 2, 6, 15),
 (7, 1, 1, 200),
-(8, 1, 1, 500)
-ON CONFLICT DO NOTHING;
+(8, 1, 1, 500);
 
 -- Insert sample stock movements
 INSERT INTO "stockMovement" ("productId", "warehouseId", "rackId", "quantity", "type", "referenceNumber", "notes", "performedBy") VALUES
 (1, 1, 1, 15, 'IN', 'PO-2024-001', 'Initial stock - Main warehouse', 1),
 (1, 2, 5, 8, 'IN', 'PO-2024-002', 'Initial stock - West Coast', 1),
-(2, 1, 2, 50, 'IN', 'PO-2024-003', 'Bulk purchase', 1)
-ON CONFLICT DO NOTHING;
+(2, 1, 2, 50, 'IN', 'PO-2024-003', 'Bulk purchase', 1);
 
 -- Insert sample orders
 INSERT INTO "order" ("orderNumber", "status") VALUES
 ('ORD-2024-001', 'pending'),
 ('ORD-2024-002', 'completed'),
-('ORD-2024-003', 'confirmed')
-ON CONFLICT (orderNumber) DO NOTHING;
+('ORD-2024-003', 'confirmed');
 
 -- Insert order items
 INSERT INTO "orderItem" ("orderId", "productId", "quantity") VALUES
@@ -89,8 +107,7 @@ INSERT INTO "orderItem" ("orderId", "productId", "quantity") VALUES
 (1, 2, 5),
 (2, 3, 3),
 (3, 4, 1),
-(3, 5, 1)
-ON CONFLICT DO NOTHING;
+(3, 5, 1);
 
 -- Success message
 SELECT 'Seed data inserted successfully!' as message,
