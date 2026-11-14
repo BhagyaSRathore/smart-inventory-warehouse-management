@@ -4,7 +4,6 @@ services:
     name: inventory-backend
     runtime: node
     region: oregon
-    plan: free
     buildCommand: cd backend && npm install
     startCommand: cd backend && npm start
     healthCheckPath: /api/health
@@ -25,7 +24,6 @@ services:
     name: inventory-ml-service
     runtime: python
     region: oregon
-    plan: free
     buildCommand: cd ml-service && pip install -r requirements.txt
     startCommand: cd ml-service && uvicorn app.main:app --host 0.0.0.0 --port $PORT
     healthCheckPath: /health
@@ -34,7 +32,6 @@ services:
   - type: web
     name: inventory-frontend
     runtime: static
-    plan: free
     buildCommand: cd web && npm install && npm run build
     staticPublishPath: web/dist
     routes:
@@ -54,5 +51,4 @@ databases:
   - name: inventory-db
     databaseName: inventory_db
     user: inventory_user
-    plan: free
     region: oregon
