@@ -1,7 +1,9 @@
-import { useEffect, useMemo, useState } from 'react';
+ import { useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import { Plus, TrendingUp, TrendingDown, RefreshCw, Edit } from 'lucide-react';
 import { getInventory, getProducts, getRacks, getWarehouses } from '../services/api';
 import StatusBadge from '../components/StatusBadge';
+import StockOperationModal from '../components/StockOperationModal';
 
 export default function Inventory() {
   const [inventory, setInventory] = useState([]);
@@ -12,6 +14,8 @@ export default function Inventory() {
   const [statusFilter, setStatusFilter] = useState('All');
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
+  const [isStockModalOpen, setIsStockModalOpen] = useState(false);
+  const [stockOperation, setStockOperation] = useState('in');
 
   useEffect(() => {
     const loadInventory = async () => {
@@ -38,6 +42,37 @@ export default function Inventory() {
 
     loadInventory();
   }, []);
+
+  const loadInventory = async () => {
+    try {
+      setLoading(true);
+      const [inventoryResponse, productResponse, warehouseResponse, rackResponse] = await Promise.all([
+        getInventory(),
+        getProducts(),
+        getWarehouses(),
+        getRacks(),
+      ]);
+
+      setInventory(inventoryResponse || []);
+      setProducts(productResponse || []);
+      setWarehouses(warehouseResponse || []);
+      setRacks(rackResponse || []);
+      setError('');
+    } catch (requestError) {
+      setError(requestError.message || 'Unable to load inventory.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleStockOperation = (operation) => {
+    setStockOperation(operation);
+    setIsStockModalOpen(true);
+  };
+
+  const handleStockSuccess = () => {
+    loadInventory();
+  };
 
   const productMap = useMemo(() => Object.fromEntries(products.map((product) => [product.id, product])), [products]);
   const warehouseMap = useMemo(() => Object.fromEntries(warehouses.map((warehouse) => [warehouse.id, warehouse.name])), [warehouses]);
@@ -72,8 +107,28 @@ export default function Inventory() {
   return (
     <div>
       <div className="page-header">
-        <h1 className="page-title">Inventory</h1>
-        <p className="page-subtitle">Track stock across all locations</p>
+        <div>
+          <h1 className="page-title">Inventory</h1>
+          <p className="page-subtitle">Track stock across all locations</p>
+        </div>
+        <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+          <button onClick={() => handleStockOperation('in')} className="btn btn-primary" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <TrendingUp size={18} />
+            Stock In
+          </button>
+          <button onClick={() => handleStockOperation('out')} className="btn" style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#ef4444', color: 'white', border: 'none' }}>
+            <TrendingDown size={18} />
+            Stock Out
+          </button>
+          <button onClick={() => handleStockOperation('transfer')} className="btn" style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#3b82f6', color: 'white', border: 'none' }}>
+            <RefreshCw size={18} />
+            Transfer
+          </button>
+          <button onClick={() => handleStockOperation('adjustment')} className="btn" style={{ display: 'flex', alignItems: 'center', gap: '6px', backgroundColor: '#f59e0b', color: 'white', border: 'none' }}>
+            <Edit size={18} />
+            Adjust
+          </button>
+        </div>
       </div>
 
       <div className="card">
@@ -121,6 +176,13 @@ export default function Inventory() {
           </tbody>
         </table>
       </div>
+
+      <StockOperationModal
+        isOpen={isStockModalOpen}
+        onClose={() => setIsStockModalOpen(false)}
+        onSuccess={handleStockSuccess}
+        initialOperation={stockOperation}
+      />
     </div>
   );
 }

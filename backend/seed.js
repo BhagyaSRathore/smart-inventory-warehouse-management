@@ -2,8 +2,6 @@ import "dotenv/config";
 import { db } from "./src/db.ts";
 import bcrypt from "bcrypt";
 
-await db.connect({ url: process.env.DATABASE_URL });
-
 async function ensureUser() {
   const passwordHash = await bcrypt.hash("admin123", 10);
 
