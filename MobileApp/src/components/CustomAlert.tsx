@@ -8,6 +8,8 @@ import {
 } from 'react-native';
 import {Check, X, AlertTriangle, Info} from 'lucide-react-native';
 
+import {useAppTheme} from '../context/ThemeContext';
+
 type AlertType = 'success' | 'error' | 'warning' | 'info';
 
 type Props = {
@@ -17,6 +19,8 @@ type Props = {
   message: string;
   buttonText?: string;
   onPress: () => void;
+  secondaryButtonText?: string;
+  onSecondaryPress?: () => void;
 };
 
 const CustomAlert = ({
@@ -26,7 +30,11 @@ const CustomAlert = ({
   message,
   buttonText = 'OK',
   onPress,
+  secondaryButtonText,
+  onSecondaryPress,
 }: Props) => {
+  const {theme, isDark} = useAppTheme();
+
   const renderIcon = () => {
     switch (type) {
       case 'success':
@@ -49,29 +57,73 @@ const CustomAlert = ({
     }
   };
 
+  const hasSecondary = Boolean(secondaryButtonText && onSecondaryPress);
+
   return (
     <Modal
       visible={visible}
       transparent
       animationType="fade"
-      onRequestClose={onPress}>
-      <View style={styles.overlay}>
-        <View style={styles.alertBox}>
+      onRequestClose={onSecondaryPress || onPress}>
+      <View style={[styles.overlay, {backgroundColor: theme.modalOverlay}]}>
+        <View
+          style={[
+            styles.alertBox,
+            {
+              backgroundColor: theme.cardBg,
+              borderColor: theme.border,
+              borderWidth: isDark ? 1 : 0,
+            },
+          ]}>
 
-          <View style={styles.iconCircle}>
+          <View
+            style={[
+              styles.iconCircle,
+              {backgroundColor: isDark ? theme.surfaceMuted : '#EAF3FF'},
+            ]}>
             {renderIcon()}
           </View>
 
-          <Text style={styles.title}>{title}</Text>
+          <Text style={[styles.title, {color: theme.textPrimary}]}>{title}</Text>
 
-          <Text style={styles.message}>{message}</Text>
+          <Text style={[styles.message, {color: theme.textSecondary}]}>{message}</Text>
 
-          <TouchableOpacity
-            style={styles.button}
-            onPress={onPress}
-            activeOpacity={0.85}>
-            <Text style={styles.buttonText}>{buttonText}</Text>
-          </TouchableOpacity>
+          {hasSecondary ? (
+            <View style={styles.buttonRow}>
+              <TouchableOpacity
+                style={[
+                  styles.secondaryButton,
+                  {
+                    backgroundColor: isDark ? theme.surfaceMuted : '#F1F5F9',
+                    borderColor: theme.border,
+                  },
+                ]}
+                onPress={onSecondaryPress}
+                activeOpacity={0.85}>
+                <Text
+                  style={[
+                    styles.secondaryButtonText,
+                    {color: isDark ? theme.textSecondary : '#64748B'},
+                  ]}>
+                  {secondaryButtonText}
+                </Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.primaryRowButton}
+                onPress={onPress}
+                activeOpacity={0.85}>
+                <Text style={styles.buttonText}>{buttonText}</Text>
+              </TouchableOpacity>
+            </View>
+          ) : (
+            <TouchableOpacity
+              style={styles.button}
+              onPress={onPress}
+              activeOpacity={0.85}>
+              <Text style={styles.buttonText}>{buttonText}</Text>
+            </TouchableOpacity>
+          )}
 
         </View>
       </View>
@@ -156,5 +208,46 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 15,
     fontWeight: '700',
+  },
+
+  buttonRow: {
+    width: '100%',
+    flexDirection: 'row',
+    gap: 12,
+    marginTop: 22,
+  },
+
+  secondaryButton: {
+    flex: 1,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: '#F1F5F9',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+
+  secondaryButtonText: {
+    color: '#64748B',
+    fontSize: 15,
+    fontWeight: '700',
+  },
+
+  primaryRowButton: {
+    flex: 1,
+    height: 50,
+    borderRadius: 14,
+    backgroundColor: '#1769E0',
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#1769E0',
+    shadowOffset: {
+      width: 0,
+      height: 5,
+    },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 4,
   },
 });

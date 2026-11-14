@@ -383,7 +383,7 @@ We welcome contributions! Please follow:
 ## 👨‍💻 Contributors
 
 - Bhagya Singh Rathore - Project Lead
-- Bhagya Singh Rathore - Frontend Developer
+- Bhagya Singh Rathore & Bhawna Soni - Frontend Developer
 - Anushka Pandey & Bhagya Singh Rathore - Backend Developer
 - Bhawi Sharma - ML Engineer
 

@@ -20,18 +20,24 @@ export const getDashboard = async (req, res) => {
     });
     
     // Calculate low stock using product.reorderLevel
-    const lowStockProducts = inventories.filter(
-      (item) => {
+    const lowStockProducts = inventories
+      .filter((item) => {
         const product = productMap[item.productId];
         if (!product) return false;
         return item.quantity <= product.reorderLevel;
-      }
-    );
-    
+      })
+      .map(item => ({
+        ...item,
+        product: productMap[item.productId] || null,
+      }));
+
     // Calculate out of stock
-    const outOfStockProducts = inventories.filter(
-      (item) => item.quantity === 0
-    );
+    const outOfStockProducts = inventories
+      .filter((item) => item.quantity === 0)
+      .map(item => ({
+        ...item,
+        product: productMap[item.productId] || null,
+      }));
     
     const pendingOrders = orders.filter(
       (order) => order.status === "pending"

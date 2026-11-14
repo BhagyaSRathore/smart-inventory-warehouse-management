@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
   View,
   Text,
@@ -16,6 +16,7 @@ import API from '../../services/api';
 import apis from '../../services/endpoints';
 import CustomAlert from '../../components/CustomAlert';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useAppTheme, ThemeColors } from '../../context/ThemeContext';
 
 type Props = {
   navigation: any;
@@ -23,6 +24,8 @@ type Props = {
 
 const RegisterScreen = ({ navigation }: Props) => {
   const insets = useSafeAreaInsets();
+  const { theme, isDark } = useAppTheme();
+  const styles = useMemo(() => getStyles(theme, isDark), [theme, isDark]);
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -30,6 +33,13 @@ const RegisterScreen = ({ navigation }: Props) => {
 
   const [role, setRole] = useState('');
   const [showRoles, setShowRoles] = useState(false);
+
+  const getRoleDisplay = (r: string) => {
+    if (r === 'WAREHOUSE_MANAGER' || r === 'Warehouse Manager') return 'Warehouse Manager';
+    if (r === 'ADMIN' || r === 'Admin') return 'Admin';
+    if (r === 'STAFF' || r === 'Staff') return 'Staff';
+    return r || 'Select your role';
+  };
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
@@ -125,14 +135,16 @@ const RegisterScreen = ({ navigation }: Props) => {
 
   return (
     <SafeAreaView style={styles.container}>
-      <StatusBar barStyle="dark-content" />
+      <StatusBar
+        barStyle={isDark ? 'light-content' : 'dark-content'}
+      />
 
       <ScrollView
         style={styles.scrollView}
         contentContainerStyle={[
           styles.scrollContent,
           {
-            paddingTop: insets.top > 0 ? insets.top + 16 : 38,
+            paddingTop: 16,
             paddingBottom: Math.max(insets.bottom, 16) + 80,
           },
         ]}
@@ -169,7 +181,7 @@ const RegisterScreen = ({ navigation }: Props) => {
           <TextInput
             style={styles.input}
             placeholder="Enter your full name"
-            placeholderTextColor="#91A0B8"
+            placeholderTextColor={theme.placeholderText}
             value={name}
             onChangeText={setName}
           />
@@ -180,7 +192,7 @@ const RegisterScreen = ({ navigation }: Props) => {
           <TextInput
             style={styles.input}
             placeholder="Enter your email"
-            placeholderTextColor="#91A0B8"
+            placeholderTextColor={theme.placeholderText}
             value={email}
             onChangeText={setEmail}
             keyboardType="email-address"
@@ -195,7 +207,7 @@ const RegisterScreen = ({ navigation }: Props) => {
             <TextInput
               style={styles.passwordInput}
               placeholder="Create a password"
-              placeholderTextColor="#91A0B8"
+              placeholderTextColor={theme.placeholderText}
               value={password}
               onChangeText={setPassword}
               secureTextEntry={!showPassword}
@@ -206,9 +218,9 @@ const RegisterScreen = ({ navigation }: Props) => {
               activeOpacity={0.7}
             >
               {showPassword ? (
-                <EyeOff size={21} color="#64748B" />
+                <EyeOff size={21} color={theme.textSecondary} />
               ) : (
-                <Eye size={21} color="#64748B" />
+                <Eye size={21} color={theme.textSecondary} />
               )}
             </TouchableOpacity>
           </View>
@@ -220,7 +232,7 @@ const RegisterScreen = ({ navigation }: Props) => {
             <TextInput
               style={styles.passwordInput}
               placeholder="Confirm your password"
-              placeholderTextColor="#91A0B8"
+              placeholderTextColor={theme.placeholderText}
               value={confirmPassword}
               onChangeText={setConfirmPassword}
               secureTextEntry={!showConfirmPassword}
@@ -232,9 +244,9 @@ const RegisterScreen = ({ navigation }: Props) => {
               activeOpacity={0.7}
             >
               {showConfirmPassword ? (
-                <EyeOff size={21} color="#64748B" />
+                <EyeOff size={21} color={theme.textSecondary} />
               ) : (
-                <Eye size={21} color="#64748B" />
+                <Eye size={21} color={theme.textSecondary} />
               )}
             </TouchableOpacity>
           </View>
@@ -250,7 +262,7 @@ const RegisterScreen = ({ navigation }: Props) => {
             <Text
               style={role ? styles.selectedRoleText : styles.placeholderText}
             >
-              {role || 'Select your role'}
+              {getRoleDisplay(role)}
             </Text>
 
             <Text style={styles.dropdownArrow}>{showRoles ? '▲' : '▼'}</Text>
@@ -262,7 +274,7 @@ const RegisterScreen = ({ navigation }: Props) => {
               <TouchableOpacity
                 style={styles.dropdownOption}
                 onPress={() => {
-                  setRole('Admin');
+                  setRole('ADMIN');
                   setShowRoles(false);
                 }}
               >
@@ -272,7 +284,7 @@ const RegisterScreen = ({ navigation }: Props) => {
               <TouchableOpacity
                 style={styles.dropdownOption}
                 onPress={() => {
-                  setRole('Warehouse Manager');
+                  setRole('WAREHOUSE_MANAGER');
                   setShowRoles(false);
                 }}
               >
@@ -282,7 +294,7 @@ const RegisterScreen = ({ navigation }: Props) => {
               <TouchableOpacity
                 style={styles.dropdownOption}
                 onPress={() => {
-                  setRole('Staff');
+                  setRole('STAFF');
                   setShowRoles(false);
                 }}
               >
@@ -338,244 +350,245 @@ const RegisterScreen = ({ navigation }: Props) => {
 
 export default RegisterScreen;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#F8FBFF',
-  },
-
-  scrollView: {
-    flex: 1,
-    backgroundColor: '#F8FBFF',
-  },
-
-  scrollContent: {
-    paddingHorizontal: 24,
-  },
-
-  header: {
-    alignItems: 'center',
-    marginBottom: 28,
-  },
-
-  logoBox: {
-    width: 64,
-    height: 64,
-    borderRadius: 22,
-    backgroundColor: '#EAF3FF',
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: 15,
-
-    shadowColor: '#1769E0',
-    shadowOffset: {
-      width: 0,
-      height: 5,
+const getStyles = (theme: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: theme.bg,
     },
-    shadowOpacity: 0.12,
-    shadowRadius: 10,
-    elevation: 4,
-  },
 
-  logo: {
-    width: 58,
-    height: 58,
-  },
-
-  title: {
-    fontSize: 29,
-    fontWeight: '800',
-    color: '#10265A',
-  },
-
-  titleBlue: {
-    color: '#1769E0',
-  },
-
-  subtitle: {
-    marginTop: 6,
-    fontSize: 14,
-    color: '#647899',
-    textAlign: 'center',
-  },
-
-  form: {
-    width: '100%',
-  },
-
-  label: {
-    fontSize: 14,
-    fontWeight: '600',
-    color: '#243B64',
-    marginBottom: 7,
-    marginLeft: 2,
-  },
-
-  input: {
-    height: 52,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D4E3F8',
-    borderRadius: 14,
-    paddingHorizontal: 15,
-    fontSize: 15,
-    color: '#172554',
-    marginBottom: 15,
-
-    shadowColor: '#1769E0',
-    shadowOffset: {
-      width: 0,
-      height: 2,
+    scrollView: {
+      flex: 1,
+      backgroundColor: theme.bg,
     },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 1,
-  },
 
-  /* PASSWORD */
-  passwordContainer: {
-    height: 52,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D4E3F8',
-    borderRadius: 14,
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingLeft: 15,
-    paddingRight: 8,
-    marginBottom: 15,
-
-    shadowColor: '#1769E0',
-    shadowOffset: {
-      width: 0,
-      height: 2,
+    scrollContent: {
+      paddingHorizontal: 24,
     },
-    shadowOpacity: 0.04,
-    shadowRadius: 5,
-    elevation: 1,
-  },
 
-  passwordInput: {
-    flex: 1,
-    height: 52,
-    fontSize: 15,
-    color: '#172554',
-  },
-
-  eyeButton: {
-    width: 42,
-    height: 50,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  eyeIcon: {
-    fontSize: 21,
-    color: '#64748B',
-  },
-
-  /* ROLE */
-  roleInput: {
-    height: 52,
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D4E3F8',
-    borderRadius: 14,
-    paddingHorizontal: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: 15,
-  },
-
-  placeholderText: {
-    fontSize: 15,
-    color: '#91A0B8',
-  },
-
-  selectedRoleText: {
-    fontSize: 15,
-    color: '#172554',
-    fontWeight: '500',
-  },
-
-  dropdownArrow: {
-    fontSize: 13,
-    color: '#64748B',
-  },
-
-  dropdown: {
-    backgroundColor: '#FFFFFF',
-    borderWidth: 1,
-    borderColor: '#D4E3F8',
-    borderRadius: 14,
-    marginTop: -8,
-    marginBottom: 15,
-    overflow: 'hidden',
-  },
-
-  dropdownOption: {
-    height: 50,
-    justifyContent: 'center',
-    paddingHorizontal: 15,
-    borderBottomWidth: 1,
-    borderBottomColor: '#EEF3F9',
-  },
-
-  dropdownText: {
-    fontSize: 14,
-    color: '#243B64',
-  },
-
-  /* BUTTON */
-  registerButton: {
-    height: 55,
-    borderRadius: 15,
-    backgroundColor: '#1769E0',
-
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-
-    shadowColor: '#1769E0',
-    shadowOffset: {
-      width: 0,
-      height: 6,
+    header: {
+      alignItems: 'center',
+      marginBottom: 28,
     },
-    shadowOpacity: 0.22,
-    shadowRadius: 10,
-    elevation: 4,
-  },
 
-  registerButtonText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: '700',
-  },
+    logoBox: {
+      width: 64,
+      height: 64,
+      borderRadius: 22,
+      backgroundColor: isDark ? 'rgba(23, 105, 224, 0.15)' : '#EAF3FF',
+      alignItems: 'center',
+      justifyContent: 'center',
+      marginBottom: 15,
 
-  arrow: {
-    color: '#FFFFFF',
-    fontSize: 23,
-    marginLeft: 10,
-  },
+      shadowColor: '#1769E0',
+      shadowOffset: {
+        width: 0,
+        height: 5,
+      },
+      shadowOpacity: 0.12,
+      shadowRadius: 10,
+      elevation: 4,
+    },
 
-  /* LOGIN */
-  loginRow: {
-    flexDirection: 'row',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginTop: 25,
-  },
+    logo: {
+      width: 58,
+      height: 58,
+    },
 
-  loginLabel: {
-    color: '#64748B',
-    fontSize: 14,
-  },
+    title: {
+      fontSize: 29,
+      fontWeight: '800',
+      color: theme.textPrimary,
+    },
 
-  loginLink: {
-    color: '#1769E0',
-    fontSize: 14,
-    fontWeight: '700',
-    marginLeft: 5,
-  },
-});
+    titleBlue: {
+      color: '#1769E0',
+    },
+
+    subtitle: {
+      marginTop: 6,
+      fontSize: 14,
+      color: theme.textSecondary,
+      textAlign: 'center',
+    },
+
+    form: {
+      width: '100%',
+    },
+
+    label: {
+      fontSize: 14,
+      fontWeight: '600',
+      color: theme.textSecondary,
+      marginBottom: 7,
+      marginLeft: 2,
+    },
+
+    input: {
+      height: 52,
+      backgroundColor: theme.inputBg,
+      borderWidth: 1,
+      borderColor: theme.inputBorder,
+      borderRadius: 14,
+      paddingHorizontal: 15,
+      fontSize: 15,
+      color: theme.textPrimary,
+      marginBottom: 15,
+
+      shadowColor: theme.shadowColor,
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.04,
+      shadowRadius: 5,
+      elevation: 1,
+    },
+
+    /* PASSWORD */
+    passwordContainer: {
+      height: 52,
+      backgroundColor: theme.inputBg,
+      borderWidth: 1,
+      borderColor: theme.inputBorder,
+      borderRadius: 14,
+      flexDirection: 'row',
+      alignItems: 'center',
+      paddingLeft: 15,
+      paddingRight: 8,
+      marginBottom: 15,
+
+      shadowColor: theme.shadowColor,
+      shadowOffset: {
+        width: 0,
+        height: 2,
+      },
+      shadowOpacity: 0.04,
+      shadowRadius: 5,
+      elevation: 1,
+    },
+
+    passwordInput: {
+      flex: 1,
+      height: 52,
+      fontSize: 15,
+      color: theme.textPrimary,
+    },
+
+    eyeButton: {
+      width: 42,
+      height: 50,
+      alignItems: 'center',
+      justifyContent: 'center',
+    },
+
+    eyeIcon: {
+      fontSize: 21,
+      color: theme.textSecondary,
+    },
+
+    /* ROLE */
+    roleInput: {
+      height: 52,
+      backgroundColor: theme.inputBg,
+      borderWidth: 1,
+      borderColor: theme.inputBorder,
+      borderRadius: 14,
+      paddingHorizontal: 15,
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'space-between',
+      marginBottom: 15,
+    },
+
+    placeholderText: {
+      fontSize: 15,
+      color: theme.placeholderText,
+    },
+
+    selectedRoleText: {
+      fontSize: 15,
+      color: theme.textPrimary,
+      fontWeight: '500',
+    },
+
+    dropdownArrow: {
+      fontSize: 13,
+      color: theme.textSecondary,
+    },
+
+    dropdown: {
+      backgroundColor: theme.cardBg,
+      borderWidth: 1,
+      borderColor: theme.borderColor,
+      borderRadius: 14,
+      marginTop: -8,
+      marginBottom: 15,
+      overflow: 'hidden',
+    },
+
+    dropdownOption: {
+      height: 50,
+      justifyContent: 'center',
+      paddingHorizontal: 15,
+      borderBottomWidth: 1,
+      borderBottomColor: theme.borderColor,
+    },
+
+    dropdownText: {
+      fontSize: 14,
+      color: theme.textPrimary,
+    },
+
+    /* BUTTON */
+    registerButton: {
+      height: 55,
+      borderRadius: 15,
+      backgroundColor: '#1769E0',
+
+      flexDirection: 'row',
+      alignItems: 'center',
+      justifyContent: 'center',
+
+      shadowColor: '#1769E0',
+      shadowOffset: {
+        width: 0,
+        height: 6,
+      },
+      shadowOpacity: 0.22,
+      shadowRadius: 10,
+      elevation: 4,
+    },
+
+    registerButtonText: {
+      color: '#FFFFFF',
+      fontSize: 16,
+      fontWeight: '700',
+    },
+
+    arrow: {
+      color: '#FFFFFF',
+      fontSize: 23,
+      marginLeft: 10,
+    },
+
+    /* LOGIN */
+    loginRow: {
+      flexDirection: 'row',
+      justifyContent: 'center',
+      alignItems: 'center',
+      marginTop: 25,
+    },
+
+    loginLabel: {
+      color: theme.textSecondary,
+      fontSize: 14,
+    },
+
+    loginLink: {
+      color: '#1769E0',
+      fontSize: 14,
+      fontWeight: '700',
+      marginLeft: 5,
+    },
+  });
