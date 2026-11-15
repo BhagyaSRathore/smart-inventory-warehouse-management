@@ -30,7 +30,7 @@ ALTER SEQUENCE order_id_seq RESTART WITH 1;
 ALTER SEQUENCE "orderItem_id_seq" RESTART WITH 1;
 
 -- Insert admin user (password: admin123 - bcrypt hashed)
-INSERT INTO "app_user" ("email", "username", "password", "name", "role", "phone") VALUES
+INSERT INTO "app_user" ("email", "username", "passwordHash", "name", "role", "phone") VALUES
 ('admin@inventory.com', 'admin', '$2b$10$rQYGhZ8vZ3vZ3vZ3vZ3vZeK5KqH5KqH5KqH5KqH5KqH5KqH5KqH5K', 'Admin User', 'ADMIN', '1234567890');
 
 -- Insert categories

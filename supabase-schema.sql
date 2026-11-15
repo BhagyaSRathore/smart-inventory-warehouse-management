@@ -20,9 +20,9 @@ DROP TABLE IF EXISTS "app_user" CASCADE;
 CREATE TABLE "app_user" (
   "id" SERIAL PRIMARY KEY,
   "email" TEXT UNIQUE NOT NULL,
-  "username" TEXT UNIQUE NOT NULL,
-  "password" TEXT NOT NULL,
-  "name" TEXT NOT NULL,
+  "username" TEXT,
+  "passwordHash" TEXT NOT NULL,
+  "name" TEXT,
   "role" TEXT DEFAULT 'STAFF' NOT NULL,
   "phone" TEXT,
   "fcmToken" TEXT,
