@@ -83,13 +83,15 @@ app.get("/api/test-db", async (req, res) => {
 
     res.json({
       message: "Database connected successfully!",
-      users,
+      userCount: users.length,
+      users: users.map(u => ({ id: u.id, email: u.email, username: u.username, role: u.role }))
     });
   } catch (error) {
     console.error(error);
 
     res.status(500).json({
       message: "Database connection failed",
+      error: error.message
     });
   }
 });
