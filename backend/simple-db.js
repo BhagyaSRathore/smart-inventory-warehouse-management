@@ -179,6 +179,7 @@ export const simpleDb = {
   },
   Rack: {
     all: () => Promise.resolve([...db.racks]),
+    first: (filter) => Promise.resolve(db.racks.find(r => Object.keys(filter).every(k => r[k] === filter[k]))),
     create: (data) => {
       const rack = { id: nextIds.rack++, ...data, createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() };
       db.racks.push(rack);
