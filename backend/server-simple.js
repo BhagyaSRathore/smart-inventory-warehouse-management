@@ -2,6 +2,12 @@ import express from "express";
 import cors from "cors";
 import "dotenv/config";
 import { initializeDatabase, simpleDb } from "./simple-db.js";
+
+// CRITICAL: Initialize global.db BEFORE any other imports that use db.ts
+await initializeDatabase();
+global.db = { orm: { public: simpleDb } };
+
+// NOW import routes (they will use the global.db we just set)
 import authRoutes from "./src/routes/auth.routes.js";
 import productRoutes from "./src/routes/product.routes.js";
 import categoryRoutes from "./src/routes/category.routes.js";
@@ -14,12 +20,6 @@ import orderRoutes from "./src/routes/order.routes.js";
 import dashboardRoutes from "./src/routes/dashboard.routes.js";
 import notificationRoutes from "./src/routes/notification.routes.js";
 import customerRoutes from "./src/routes/customer.routes.js";
-
-// Initialize database with sample data
-await initializeDatabase();
-
-// Make simple db available globally
-global.db = { orm: { public: simpleDb } };
 
 const app = express();
 
