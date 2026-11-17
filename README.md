@@ -6,7 +6,7 @@ An AI and Machine Learning Based Platform for Intelligent Inventory, Demand Pred
 
 **🚀 Application is now live in production!**
 
-- **Frontend**: [https://smart-inventory-warehouse-managemen.vercel.app](https://smart-inventory-warehouse-managemen.vercel.app)
+- **Frontend**: [https://ware-sync-mu.vercel.app/](https://ware-sync-mu.vercel.app/)
 - **Backend API**: [https://smart-inventory-warehouse-management.onrender.com](https://smart-inventory-warehouse-management.onrender.com)
 - **API Health Check**: [https://smart-inventory-warehouse-management.onrender.com/health](https://smart-inventory-warehouse-management.onrender.com/health)
 
@@ -533,6 +533,6 @@ For questions or suggestions, please open an issue or contact the project team.
 
 **Status**: Phase 5 (Production Deployment) - Completed ✅
 
-**Live Application**: [https://smart-inventory-warehouse-managemen.vercel.app](https://smart-inventory-warehouse-managemen.vercel.app)
+**Live Application**: [https://ware-sync-mu.vercel.app/](https://ware-sync-mu.vercel.app/)
 
 **Next Steps**: Mobile application development with React Native
